@@ -1,88 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Booha ABC</title>
+  <title>ブーハABC</title>
   <style>
-    /* --- Base & Background --- */
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    .bg{
-      position:fixed; inset:0;
-      background:url("./booha-background.jpg") center/cover no-repeat; /* <-- stretched background */
-      z-index:-2;
-    }
-    .overlay{position:fixed; inset:0; background:rgba(255,255,255,.22); z-index:-1}
+    /* Background stretched */
+    .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
+    .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
-    /* --- Hello / Start --- */
-    .hello{position:fixed; inset:0; display:grid; place-items:center; background:rgba(255,255,255,.7); z-index:10}
-    .hello-card{
-      background:#fff; border-radius:20px; padding:24px; text-align:center; max-width:420px;
-      box-shadow:0 8px 20px rgba(0,0,0,.2)
-    }
-    .hello-card img{width:120px; height:120px; object-fit:contain}
-    .hello-card h1{margin:12px 0 6px; font-size:27px; line-height:1.05}
-    .hello-card p{margin:4px 0; font-size:13px; color:#444}
-    .hello-card button{
-      margin-top:16px; padding:12px 20px; font-size:18px; font-weight:bold;
-      background:#111; color:#fff; border:0; border-radius:14px; cursor:pointer
-    }
+    /* Hello / Start */
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
+    .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .hello-card img{width:120px;height:120px;object-fit:contain}
+    .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
+    .hello-card p{margin:4px 0;font-size:13px;color:#444}
+    .hello-card button{margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;background:#111;color:#fff;border:0;border-radius:14px;cursor:pointer}
 
-    /* --- Top bar --- */
-    .topbar{display:flex; justify-content:space-between; align-items:center; padding:10px 16px}
-    .progress{flex:1; margin-right:12px}
-    .bar{height:10px; background:#eee; border-radius:999px; overflow:hidden}
-    .bar>i{display:block; height:100%; background:#111; width:0%}
-    .countdown{font-size:14px; color:#333}
+    /* Top bar */
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+    .progress{flex:1;margin-right:12px}
+    .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
+    .bar>i{display:block;height:100%;background:#111;width:0%}
+    .countdown{font-size:14px;color:#333}
 
-    /* --- Letter of the Day (Cards) --- */
-    .letter-screen{
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      height:calc(100vh - 80px); padding:16px; text-align:center; gap:16px
-    }
+    /* Letter screen with card */
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;text-align:center;gap:16px}
     .card-wrap{
-      width:min(820px, 92vw); aspect-ratio:4/3;
-      background:#fff; border-radius:22px; overflow:hidden;
+      display:grid;place-items:center;
+      width:min(900px, 96vw);
+      min-height:40vh;
+      background:#fff;border-radius:22px;border:1px solid #e7e9ef;
       box-shadow:0 16px 32px rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.8) inset;
-      border:1px solid #e7e9ef;
-      display:grid; place-items:center;
+      padding:8px;
     }
-    .card-wrap img{width:100%; height:100%; object-fit:cover;}
+    /* Show 100% of the card, never crop */
+    .card-wrap img{
+      max-width:100%;
+      max-height:70vh;
+      width:auto;height:auto;
+      object-fit:contain;
+      border-radius:14px;
+    }
 
-    /* --- Fun Play Buttons --- */
-    .buttons{display:grid; grid-template-columns:repeat(2, minmax(140px, 1fr)); gap:12px; width:min(680px, 92vw)}
+    /* Play buttons */
+    .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px, 92vw)}
     .btn-audio{
-      display:flex; align-items:center; justify-content:center; gap:10px;
-      border:0; border-radius:999px; padding:14px 16px;
-      font-size:18px; font-weight:900; color:#fff; cursor:pointer;
-      box-shadow:0 8px 16px rgba(0,0,0,.18)
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      border:0;border-radius:18px;padding:14px 16px;
+      font-size:18px;font-weight:900;color:#fff;cursor:pointer;
+      box-shadow:0 8px 16px rgba(0,0,0,.18);
+      transition: transform 0.15s ease;
     }
-    .btn-audio .playmark{display:inline-block; width:0; height:0; border-left:12px solid currentColor; border-top:8px solid transparent; border-bottom:8px solid transparent}
-    .btn-audio small{display:block; font-weight:600; font-size:12px; opacity:.9}
-    .btn1{background:#ff6b6b} .btn2{background:#00bcd4} .btn3{background:#ffd166; color:#111} .btn4{background:#7c5cff}
-    .btn-audio[disabled]{opacity:.5; cursor:default}
+    .btn-audio:active{transform:scale(0.92)}
+    .btn-audio .row{display:flex;align-items:center;gap:8px}
+    .btn-audio .num{font-size:20px}
+    .btn-audio .label{font-size:18px}
+    .btn-audio small{font-weight:600;font-size:12px;opacity:.95}
+    .btn1{background:#ff6b6b}.btn2{background:#00bcd4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
+    .btn-audio[disabled]{opacity:.5;cursor:default}
 
     .btn-finish{
-      margin-top:4px; padding:14px 18px; background:#28a745; color:#fff;
-      font-size:20px; font-weight:900; border:0; border-radius:14px; cursor:pointer; display:none;
-      box-shadow:0 10px 18px rgba(0,0,0,.18)
+      margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;
+      font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;
+      box-shadow:0 10px 18px rgba(0,0,0,.18);
+      transition: transform 0.15s ease;
     }
+    .btn-finish:active{transform:scale(0.92)}
 
-    canvas#confetti{position:fixed; inset:0; pointer-events:none; z-index:50}
+    canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   </style>
 </head>
 <body>
   <div class="bg"></div>
   <div class="overlay"></div>
 
-  <!-- Hello screen -->
+  <!-- Hello -->
   <div id="hello" class="hello">
     <div class="hello-card">
-      <img src="./playful-pink-booha.png" alt="Booha logo" />
-      <h1>Hello!</h1>
-      <p>One new letter unlocks every 24 hours after Start.</p>
-      <p>Please use the same device to keep your progress.</p>
-      <button id="startBtn">Start</button>
+      <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
+      <h1>こんにちは！</h1>
+      <p>スタートすると、毎日１つの文字が解放されます。</p>
+      <p>進捗を守るため、同じ端末をご使用ください。</p>
+      <button id="startBtn">スタート</button>
     </div>
   </div>
 
@@ -95,27 +96,40 @@
   <!-- Letter of the day -->
   <div class="letter-screen">
     <div class="card-wrap">
-      <img id="cardImg" src="./1.jpg" alt="Card 1" />
+      <img id="cardImg" src="./1.jpg" alt="カード1" />
     </div>
 
     <div class="buttons">
-      <button id="btn1" class="btn-audio btn1"><span class="playmark"></span> A <small>repeat</small></button>
-      <button id="btn2" class="btn-audio btn2"><span class="playmark"></span> APPLE <small>read along</small></button>
-      <button id="btn3" class="btn-audio btn3"><span class="playmark"></span> ANT <small>repeat</small></button>
-      <button id="btn4" class="btn-audio btn4"><span class="playmark"></span> A • APPLE • ANT <small>special</small></button>
+      <button id="btn1" class="btn-audio btn1">
+        <div class="row"><span class="num">①</span><span class="label">A</span></div>
+        <small>リピート</small>
+      </button>
+      <button id="btn2" class="btn-audio btn2">
+        <div class="row"><span class="num">②</span><span class="label">APPLE</span></div>
+        <small>いっしょに読む</small>
+      </button>
+      <button id="btn3" class="btn-audio btn3">
+        <div class="row"><span class="num">③</span><span class="label">ANT</span></div>
+        <small>リピート</small>
+      </button>
+      <button id="btn4" class="btn-audio btn4">
+        <div class="row"><span class="num">④</span><span class="label">A・APPLE・ANT</span></div>
+        <small>スペシャル！</small>
+      </button>
     </div>
 
-    <button id="finishBtn" class="btn-finish">Finished!</button>
+    <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
   <canvas id="confetti"></canvas>
 
   <script>
-    /* ---------- Timing / Unlock ---------- */
     const MS_DAY = 24*60*60*1000;
-    const LS_KEY = "abc_start_ts";
+    const LS_KEY_START = "abc_start_ts";
+    const LS_KEY_DONE  = "abc_done_letters";
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    let startTs = localStorage.getItem(LS_KEY)?Number(localStorage.getItem(LS_KEY)):null;
+
+    let startTs = localStorage.getItem(LS_KEY_START)?Number(localStorage.getItem(LS_KEY_START)):null;
 
     const hello = document.getElementById("hello");
     const startBtn = document.getElementById("startBtn");
@@ -129,15 +143,27 @@
     const btn4 = document.getElementById("btn4");
     const finishBtn = document.getElementById("finishBtn");
 
-    let activeIndex = 0;   // 0..25 — today’s letter (derived from unlock count)
-    let audioStep = 0;     // enforce 1→2→3→4 order
+    let activeIndex = 0;
+    let audioStep = 0;
     let confettiRunning = false;
+    let doneSet = loadDoneSet();
 
     startBtn.onclick = () => {
-      if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY, startTs); }
+      if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
       hello.style.display = "none";
       showLetter();
     };
+
+    function loadDoneSet(){
+      try {
+        const raw = localStorage.getItem(LS_KEY_DONE);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(arr);
+      } catch { return new Set(); }
+    }
+    function saveDoneSet(){
+      localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet]));
+    }
 
     function getUnlockedCount(){
       if(!startTs) return 0;
@@ -162,26 +188,37 @@
 
     function showLetter(){
       const unlocked = getUnlockedCount();
-      activeIndex = unlocked - 1; // 0-based index for today
+      activeIndex = unlocked - 1;
       barFill.style.width = (unlocked/26*100) + "%";
-      audioStep = 0;
-      finishBtn.style.display = "none";
-      // start at card 1
+
       setCard(1);
-      // enable only first button initially (order enforcement)
-      setButtonStates();
+
+      const L = letters[activeIndex];
+      const isAlreadyDone = doneSet.has(L);
+
+      if (isAlreadyDone){
+        audioStep = 4;
+        setAllButtonsEnabled(true);
+        finishBtn.style.display = "none";
+      } else {
+        audioStep = 0;
+        setButtonStates();
+        finishBtn.style.display = "none";
+      }
     }
 
     function setCard(n){
-      const src = `./${n}.jpg`; // 1.jpg, 2.jpg, 3.jpg, 4.jpg in root
+      const src = `./${n}.jpg`;
       cardImg.src = src;
-      cardImg.alt = `Card ${n}`;
-      // Basic load error guard
-      cardImg.onerror = () => alert(`Missing image: ${src}`);
+      cardImg.alt = `カード${n}`;
+      cardImg.onerror = () => alert(`画像が見つかりません: ${src}`);
+    }
+
+    function setAllButtonsEnabled(on){
+      [btn1,btn2,btn3,btn4].forEach(b => b.disabled = !on);
     }
 
     function setButtonStates(){
-      // Only allow next button in the sequence
       btn1.disabled = !(audioStep === 0);
       btn2.disabled = !(audioStep === 1);
       btn3.disabled = !(audioStep === 2);
@@ -189,55 +226,70 @@
     }
 
     function playAudioFor(step){
-      // Map 1..4 to file names A.m4a, AA.m4a, ...
       const L = letters[activeIndex];
-      const name = L.repeat(step); // A / AA / AAA / AAAA
+      const name = L.repeat(step);
       const src = `assets/audio/${name}.m4a`;
-      console.log("Playing:", src);
       const audio = new Audio(src);
       audio.play().catch(err=>{
-        alert("Audio not found or cannot play: " + src);
+        alert("音声ファイルが見つからないか再生できません: " + src);
         console.error(err);
       });
     }
 
-    // Button handlers (1..4)
+    function playClick(){
+      const click = new Audio("assets/sfx/click.mp3");
+      click.volume = 0.4;
+      click.play().catch(()=>{});
+    }
+
     btn1.onclick = () => {
-      if(audioStep !== 0) return;
+      playClick();
+      if(audioStep>0 && audioStep<4) return;
       setCard(1); playAudioFor(1);
-      audioStep = 1; setButtonStates();
+      if(audioStep===0){ audioStep=1; setButtonStates(); }
     };
     btn2.onclick = () => {
-      if(audioStep !== 1) return;
+      playClick();
+      if(doneSet.has(letters[activeIndex])){ setCard(2); playAudioFor(2); return; }
+      if(audioStep!==1) return;
       setCard(2); playAudioFor(2);
-      audioStep = 2; setButtonStates();
+      audioStep=2; setButtonStates();
     };
     btn3.onclick = () => {
-      if(audioStep !== 2) return;
+      playClick();
+      if(doneSet.has(letters[activeIndex])){ setCard(3); playAudioFor(3); return; }
+      if(audioStep!==2) return;
       setCard(3); playAudioFor(3);
-      audioStep = 3; setButtonStates();
+      audioStep=3; setButtonStates();
     };
     btn4.onclick = () => {
-      if(audioStep !== 3) return;
+      playClick();
+      if(doneSet.has(letters[activeIndex])){ setCard(4); playAudioFor(4); return; }
+      if(audioStep!==3) return;
       setCard(4); playAudioFor(4);
-      audioStep = 4; setButtonStates();
+      audioStep=4; setButtonStates();
       finishBtn.style.display = "inline-block";
     };
 
     finishBtn.onclick = () => {
-      if(confettiRunning) return;
-      startConfetti(4000);
+      playClick();
+      const L = letters[activeIndex];
+      if (!doneSet.has(L)){
+        startConfetti(5000);
+        doneSet.add(L);
+        saveDoneSet();
+      }
+      setAllButtonsEnabled(true);
+      finishBtn.style.display = "none";
     };
 
-    // Countdown loop
     function updateCountdown(){
       const ms = nextUnlockMs();
-      countdown.textContent = ms === 0 ? "All unlocked" : fmt(ms);
+      countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
     }
     setInterval(updateCountdown, 1000);
     updateCountdown();
 
-    // Show hello if first time, else jump right in
     if(startTs){ hello.style.display="none"; showLetter(); }
 
     /* ---------- Confetti ---------- */
@@ -245,21 +297,24 @@
     const ctx = canvas.getContext("2d");
     let confetti = [];
     function startConfetti(duration){
+      if(confettiRunning) return;
       confettiRunning = true;
       resize();
-      confetti = Array.from({length:160}).map(()=>({
+      confetti = Array.from({length:320}).map(()=>({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height - canvas.height,
-        r: Math.random()*6 + 4,
-        d: Math.random()*0.6 + 0.6,
+        r: Math.random()*8 + 3,
+        d: Math.random()*1 + 0.5,
         color: `hsl(${Math.random()*360},100%,50%)`
       }));
       const end = Date.now() + duration;
       (function draw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
         confetti.forEach(p=>{
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
-          ctx.fillStyle = p.color; ctx.fill();
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
+          ctx.fillStyle = p.color;
+          ctx.fill();
         });
         confetti.forEach(p=>{
           p.y += p.d*4;
