@@ -3,366 +3,182 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ブーハABC</title>
-  <meta name="description" content="はじめてから24時間ごとに新しい文字が１つ解放されます。" />
+  <title>Booha ABC</title>
   <style>
-    :root{
-      --bg-blur: 3px;           /* ↓ 背景が見えやすいように弱め */
-      --overlay-alpha: .25;      /* ↓ 白かぶせを薄くして背景を見せる */
-      --tile-radius: 18px;
-      --tile-shadow: 0 8px 18px rgba(0,0,0,.12);
-      --ring: 3px;
-      --maxw: 1080px;
-      --ink: #111;
-      --muted: #6b7280;
-      --paper: #ffffff;
-      --soft: #f6f7f9;
-      --accent: #111;
-      --tile-border: #e6e8ee;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-
-    /* Background */
-    .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/700px repeat;
-        filter: blur(var(--bg-blur)) saturate(110%) brightness(103%);
-        transform:translateZ(0)}
-    .bg-overlay{position:fixed;inset:0;background:rgba(255,255,255,var(--overlay-alpha))}
-
-    /* App shell */
-    .container{position:relative;max-width:var(--maxw);margin:0 auto;padding:24px 16px 56px}
-    header.appbar{display:flex;gap:16px;align-items:flex-end;justify-content:space-between;margin:8px 0 14px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.18))}
-    .brand h1{margin:0;font-size:clamp(22px,4vw,30px);line-height:1.05;font-weight:900;letter-spacing:.2px}
-    .sub{margin:2px 0 0;color:var(--muted);font-size:13px}
-    .stats{display:grid;gap:8px;text-align:right;font-size:12px;color:var(--muted)}
-    .countdown strong{color:var(--ink)}
-
-    /* Progress */
-    .progress{margin:10px 0 20px}
-    .bar{height:10px;background:#e9ebf0;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
-    .bar>i{display:block;height:100%;background:var(--accent);width:0%;transition:width .6s cubic-bezier(.2,.8,.2,1)}
-    .progress small{display:inline-block;margin-top:6px;color:var(--muted)}
-
-    /* Grid */
-    .grid{display:grid;gap:12px;grid-template-columns:repeat(4,1fr)}
-    @media (min-width:600px){.grid{grid-template-columns:repeat(6,1fr)}}
-    @media (min-width:900px){.grid{grid-template-columns:repeat(8,1fr)}}
-    .tile{position:relative;aspect-ratio:1/1;border-radius:var(--tile-radius);background:var(--paper);
-          box-shadow:var(--tile-shadow);border:1px solid var(--tile-border);display:grid;place-items:center;
-          font-weight:900;font-size:clamp(28px,7vw,36px);letter-spacing:.5px;cursor:pointer;user-select:none;
-          transition:transform .08s ease, box-shadow .08s ease}
-    .tile:active{transform:translateY(1px) scale(.995)}
-    .ring{position:absolute;inset:calc(var(--ring) * -1);border-radius:calc(var(--tile-radius) + var(--ring));
-          border:var(--ring) solid #000;opacity:.08;pointer-events:none}
-    .tile[data-col="1"] .ring{border-color:#ff6b6b;opacity:.35}
-    .tile[data-col="2"] .ring{border-color:#00bcd4;opacity:.35}
-    .tile[data-col="3"] .ring{border-color:#ffd166;opacity:.35}
-    .tile[data-col="4"] .ring{border-color:#7c5cff;opacity:.35}
-    .tile[data-col="5"] .ring{border-color:#6bdd8b;opacity:.35}
-
-    .tile.locked{cursor:default;color:#9aa1ad;background:var(--soft);border-color:#e3e6ed;box-shadow:none}
-    .tile.locked .ring{display:none}
-    .lock{width:38%;aspect-ratio:1/1;border-radius:12px;background:linear-gradient(180deg,#dfe3ea,#c7ccd6);
-          box-shadow:inset 0 2px 0 rgba(255,255,255,.8),0 3px 8px rgba(0,0,0,.08);position:relative}
-    .lock:before,.lock:after{content:"";position:absolute;left:50%;transform:translateX(-50%);background:#b8becc}
-    .lock:before{width:42%;height:26%;top:-22%;border-radius:12px 12px 0 0}
-    .lock:after{width:18%;height:18%;top:34%;border-radius:999px;background:#8a93a6}
-    .eta{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted)}
-
-    /* Fullscreen Letter (Modal) */
-    .modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(255,255,255,.35);
-           backdrop-filter: blur(6px);z-index:60}
-    .modal.show{display:grid}
-    .card{width:min(820px,92vw);border-radius:28px;border:1px solid #e7e9ef;background:#ffffffee;
-          box-shadow:0 18px 36px rgba(0,0,0,.18);padding:22px}
-    .toprow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
-    .meta{font-size:12px;color:var(--muted)}
-    .close{border:1px solid var(--tile-border);background:#fff;border-radius:12px;padding:8px 12px;font-weight:700;cursor:pointer}
-    .big{display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px}
-    .letter{font-size:clamp(120px,22vw,220px);font-weight:900;line-height:1;margin:0}
-    .controls{display:flex;flex-direction:column;gap:10px;align-items:flex-end}
-    .play{display:flex;align-items:center;gap:10px;border:0;border-radius:999px;padding:12px 16px;background:#111;color:#fff;
-          font-weight:800;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.2)}
-    .play:disabled{opacity:.5;cursor:default}
-    .patterns{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{border:1px solid var(--tile-border);background:#fff;border-radius:999px;padding:8px 12px;font-weight:800}
-    .actions{display:flex;gap:8px;margin-top:14px}
-    .btn{border:1px solid var(--tile-border);background:#fff;padding:10px 14px;border-radius:12px;font-weight:700;cursor:pointer}
-    .btn:active{transform:translateY(1px)}
-    .note{margin-top:8px;font-size:12px;color:var(--muted)}
-    
-    /* Hello / Start */
-    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.25);backdrop-filter:blur(6px);z-index:70}
-    .hello-card{text-align:center;background:#ffffffd9;backdrop-filter:blur(6px);border:1px solid #e7e9ef;border-radius:24px;
-                padding:26px 22px;box-shadow:0 12px 28px rgba(0,0,0,.14);max-width:520px}
-    .hello-card img{width:120px;height:120px;object-fit:contain}
-    .hello-card h1{margin:12px 0 6px;font-size:28px;line-height:1.05}
-    .hello-card p{margin:4px 0;color:var(--muted);font-size:14px}
-    .hello .start{margin-top:14px;background:#111;color:#fff;border:0;border-radius:14px;padding:12px 16px;font-weight:800;letter-spacing:.2px;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.18)}
-    .hide{display:none}
+    body,html{margin:0;padding:0;height:100%;font-family:sans-serif}
+    .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/700px repeat;z-index:-2}
+    .overlay{position:fixed;inset:0;background:rgba(255,255,255,.25);z-index:-1}
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
+    .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:400px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .hello-card img{width:120px}
+    .hello-card button{margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;background:#111;color:#fff;border:0;border-radius:14px;cursor:pointer}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+    .progress{flex:1;margin-right:12px}
+    .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
+    .bar>i{display:block;height:100%;background:#111;width:0%}
+    .countdown{font-size:14px;color:#333}
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:20px;text-align:center}
+    .big-letter{font-size:20vw;font-weight:900;margin:20px 0}
+    .buttons{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
+    .btn-audio{padding:16px;border:0;border-radius:16px;font-size:24px;font-weight:bold;cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,.15)}
+    .btn-audio small{display:block;font-size:14px;font-weight:normal;color:#333}
+    .btn-finish{margin-top:20px;padding:16px;background:#28a745;color:#fff;font-size:22px;font-weight:bold;border:0;border-radius:16px;cursor:pointer;display:none}
+    canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   </style>
 </head>
 <body>
-  <div class="bg" aria-hidden="true"></div>
-  <div class="bg-overlay" aria-hidden="true"></div>
+  <div class="bg"></div>
+  <div class="overlay"></div>
 
-  <!-- Hello / Start (日本語) -->
+  <!-- Hello screen -->
   <div id="hello" class="hello">
     <div class="hello-card">
-      <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
+      <img src="./playful-pink-booha.png" alt="logo" />
       <h1>こんにちは！</h1>
-      <p><strong>ブーハABC</strong> へようこそ。はじめてから <strong>24時間ごとに1文字</strong> が解放されます。</p>
-      <p>進捗を守るため、<strong>同じ端末</strong> を使ってください。</p>
-      <button id="btnStart" class="start">はじめる</button>
-      <p class="note">前に始めたことがある場合は、つづきから表示します。</p>
+      <p>スタートすると、毎日１つの文字が解放されます。</p>
+      <p>同じ端末を使ってください。</p>
+      <button id="startBtn">スタート</button>
     </div>
   </div>
 
-  <div class="container">
-    <header class="appbar">
-      <div class="brand">
-        <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
-        <div>
-          <h1>ブーハABC</h1>
-          <div class="sub">スタート後、24時間ごとに新しい文字が解放されます。</div>
-        </div>
-      </div>
-      <div class="stats">
-        <div id="startedAt">開始：—</div>
-        <div id="countdown" class="countdown">次の解放まで：<strong>—:—:—</strong></div>
-      </div>
-    </header>
-
-    <section class="progress">
-      <div class="bar"><i id="barFill" style="width:0%"></i></div>
-      <small id="progressText">進捗：0/26</small>
-    </section>
-
-    <section id="grid" class="grid" aria-live="polite"></section>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
+    <div id="countdown" class="countdown">—:—:—</div>
   </div>
 
-  <!-- Fullscreen Letter Modal -->
-  <div id="modal" class="modal" aria-modal="true" role="dialog">
-    <div class="card">
-      <div class="toprow">
-        <div class="meta" id="ordinal">1 / 26</div>
-        <button class="close" id="closeBtn">とじる</button>
-      </div>
-
-      <div class="big">
-        <h2 id="bigLetter" class="letter">A</h2>
-        <div class="controls">
-          <!-- Audio play (we'll wire actual files next) -->
-          <button id="playBtn" class="play" disabled>
-            ▶︎ 音声
-          </button>
-          <div class="patterns">
-            <span class="chip" data-pat="1">A</span>
-            <span class="chip" data-pat="2">A-A</span>
-            <span class="chip" data-pat="3">A-A-A</span>
-            <span class="chip" data-pat="4">A-A-A-A</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn" id="prevBtn">まえ</button>
-        <button class="btn" id="nextBtn">つぎ</button>
-      </div>
-      <div class="note">※ 音声は次のステップで追加します。</div>
+  <!-- Letter of the day screen -->
+  <div class="letter-screen">
+    <div id="bigLetter" class="big-letter">A</div>
+    <div class="buttons">
+      <button id="btn1" class="btn-audio" style="background:#ff6b6b">A<small>リピート</small></button>
+      <button id="btn2" class="btn-audio" style="background:#00bcd4">A-A<small>いっしょに読む</small></button>
+      <button id="btn3" class="btn-audio" style="background:#ffd166">A-A-A<small>リピート</small></button>
+      <button id="btn4" class="btn-audio" style="background:#7c5cff">A-A-A-A<small>スペシャル！</small></button>
     </div>
+    <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
+
+  <canvas id="confetti"></canvas>
 
   <script>
-    (function(){
-      const MS_DAY = 24 * 60 * 60 * 1000;
-      const LS_KEY = "abc_app_start_ts";
-      const now = () => Date.now();
+    const MS_DAY = 24*60*60*1000;
+    const LS_KEY = "abc_start_ts";
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    let startTs = localStorage.getItem(LS_KEY)?Number(localStorage.getItem(LS_KEY)):null;
 
-      const LETTERS = Array.from({length:26}, (_,i) => {
-        const char = String.fromCharCode(65 + i);
-        return { id: i, char };
-      });
+    const hello=document.getElementById("hello");
+    const startBtn=document.getElementById("startBtn");
+    const barFill=document.getElementById("barFill");
+    const countdown=document.getElementById("countdown");
+    const bigLetter=document.getElementById("bigLetter");
+    const btns=[btn1,btn2,btn3,btn4];
+    const finishBtn=document.getElementById("finishBtn");
 
-      // State
-      let startTs = readStart();
-      let activeIndex = null;
+    let activeIndex=0; // current letter index
+    let audioStep=0; // track progress through 1..4
+    let confettiRunning=false;
 
-      // Elements
-      const hello = document.getElementById('hello');
-      const btnStart = document.getElementById('btnStart');
-      const startedAt = document.getElementById('startedAt');
-      const countdownEl = document.getElementById('countdown');
-      const barFill = document.getElementById('barFill');
-      const progressText = document.getElementById('progressText');
-      const grid = document.getElementById('grid');
+    startBtn.onclick=()=>{
+      if(!startTs){ startTs=Date.now(); localStorage.setItem(LS_KEY,startTs); }
+      hello.style.display="none";
+      showLetter();
+    };
 
-      // Modal
-      const modal = document.getElementById('modal');
-      const bigLetter = document.getElementById('bigLetter');
-      const ordinal = document.getElementById('ordinal');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      const closeBtn = document.getElementById('closeBtn');
-      const playBtn = document.getElementById('playBtn');
+    function getUnlockedCount(){
+      if(!startTs) return 0;
+      const elapsed=Date.now()-startTs;
+      const days=Math.floor(elapsed/MS_DAY);
+      return Math.min(26,Math.max(1,days+1));
+    }
+    function nextUnlockMs(){
+      if(!startTs) return null;
+      const unlocked=getUnlockedCount();
+      if(unlocked>=26) return 0;
+      return (startTs+unlocked*MS_DAY)-Date.now();
+    }
+    function fmt(ms){
+      if(ms==null) return "—:—:—";
+      const s=Math.floor(ms/1000);
+      const h=String(Math.floor(s/3600)).padStart(2,"0");
+      const m=String(Math.floor((s%3600)/60)).padStart(2,"0");
+      const ss=String(s%60).padStart(2,"0");
+      return `${h}:${m}:${ss}`;
+    }
 
-      // Prepare (audio to be wired later)
-      let currentPattern = 1; // 1..4
+    function showLetter(){
+      const unlocked=getUnlockedCount();
+      activeIndex=unlocked-1; // show today's
+      bigLetter.textContent=letters[activeIndex];
+      barFill.style.width=(unlocked/26*100)+"%";
+      audioStep=0;
+      finishBtn.style.display="none";
+    }
 
-      renderAll();
-      setInterval(tick, 1000);
+    function playAudio(step){
+      const L=letters[activeIndex];
+      let name=L.repeat(step); // A, AA, AAA, AAAA
+      let audio=new Audio(`assets/audio/${name}.m4a`);
+      audio.play();
+    }
 
-      btnStart.addEventListener('click', () => {
-        if (startTs == null) {
-          startTs = Date.now();
-          localStorage.setItem(LS_KEY, String(startTs));
+    btns.forEach((b,i)=>{
+      b.onclick=()=>{
+        if(audioStep===i){ // enforce order
+          playAudio(i+1);
+          audioStep++;
+          if(audioStep===4) finishBtn.style.display="block";
         }
-        hello.classList.add('hide');
-        renderAll();
-      });
+      };
+    });
 
-      // Modal controls
-      prevBtn.addEventListener('click', () => {
-        if (activeIndex == null) return;
-        const unlocked = getUnlockedCount();
-        activeIndex = Math.max(0, activeIndex - 1);
-        if (activeIndex >= unlocked) activeIndex = unlocked - 1;
-        openLetter(activeIndex);
-      });
+    finishBtn.onclick=()=>{
+      if(confettiRunning) return;
+      startConfetti(4000);
+    };
 
-      nextBtn.addEventListener('click', () => {
-        if (activeIndex == null) return;
-        const unlocked = getUnlockedCount();
-        activeIndex = Math.min(unlocked - 1, activeIndex + 1);
-        openLetter(activeIndex);
-      });
+    function updateCountdown(){
+      const ms=nextUnlockMs();
+      countdown.textContent=ms===0?"すべて解放":fmt(ms);
+    }
+    setInterval(updateCountdown,1000);
+    updateCountdown();
 
-      closeBtn.addEventListener('click', () => {
-        modal.classList.remove('show');
-        activeIndex = null;
-      });
-
-      // Pattern chips (A / A-A / A-A-A / A-A-A-A)
-      document.querySelectorAll('.chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          currentPattern = Number(chip.dataset.pat);
-          // (Audio wiring later) We’ll use currentPattern to choose the right file
-          // e.g., A_name.mp3 vs A_sound.mp3 etc., or A-2.mp3 etc. as you prefer.
+    // simple confetti
+    const canvas=document.getElementById("confetti");
+    const ctx=canvas.getContext("2d");
+    let confetti=[];
+    function startConfetti(duration){
+      confettiRunning=true;
+      resize();
+      confetti=Array.from({length:150}).map(()=>({
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height-canvas.height,
+        r:Math.random()*6+4,
+        d:Math.random()*0.5+0.5,
+        color:`hsl(${Math.random()*360},100%,50%)`
+      }));
+      let end=Date.now()+duration;
+      function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        confetti.forEach(p=>{
+          ctx.beginPath();
+          ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
+          ctx.fillStyle=p.color;
+          ctx.fill();
         });
-      });
-
-      function readStart(){
-        const raw = localStorage.getItem(LS_KEY);
-        return raw ? Number(raw) : null;
-      }
-
-      function getUnlockedCount(){
-        if (startTs == null) return 0;
-        const elapsed = now() - startTs;
-        const days = Math.floor(elapsed / MS_DAY);
-        return Math.min(26, Math.max(1, days + 1));
-      }
-
-      function nextUnlockMs(){
-        if (startTs == null) return null;
-        const unlocked = getUnlockedCount();
-        if (unlocked >= 26) return 0;
-        const nextAt = startTs + unlocked * MS_DAY;
-        return Math.max(0, nextAt - now());
-      }
-
-      function fmt(ms){
-        if (ms == null) return "—:—:—";
-        const s = Math.floor(ms / 1000);
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        const ss = s % 60;
-        const pad = n => String(n).padStart(2,'0');
-        return `${pad(h)}:${pad(m)}:${pad(ss)}`;
-      }
-
-      function renderHeader(){
-        if (startTs == null){
-          startedAt.textContent = "開始：—";
-          countdownEl.innerHTML = '次の解放まで：<strong>—:—:—</strong>';
-        } else {
-          startedAt.textContent = "開始：" + new Date(startTs).toLocaleString();
-          const ms = nextUnlockMs();
-          countdownEl.innerHTML = (ms === 0)
-            ? 'すべて解放 🎉'
-            : `次の解放まで：<strong>${fmt(ms)}</strong>`;
-        }
-      }
-
-      function renderProgress(){
-        const unlocked = getUnlockedCount();
-        const pct = (unlocked / 26) * 100;
-        barFill.style.width = pct.toFixed(2) + "%";
-        progressText.textContent = `進捗：${unlocked}/26`;
-      }
-
-      function renderGrid(){
-        const unlocked = getUnlockedCount();
-        grid.innerHTML = "";
-        LETTERS.forEach((L, idx) => {
-          const tile = document.createElement('button');
-          tile.className = "tile";
-          tile.dataset.col = (idx % 5) + 1;
-
-          if (idx < unlocked){
-            tile.innerHTML = `<span>${L.char}</span><span class="ring"></span>`;
-            tile.addEventListener('click', () => openLetter(idx));
-          } else {
-            tile.classList.add('locked');
-            const eta = startTs == null ? null : startTs + (idx) * MS_DAY - now();
-            tile.innerHTML = `<div class="lock"></div><div class="eta">${eta && eta>0 ? "あと " + fmt(eta) : "もうすぐ"}</div>`;
-          }
-          grid.appendChild(tile);
+        confetti.forEach(p=>{
+          p.y+=p.d*4;
+          if(p.y>canvas.height){p.y=0;p.x=Math.random()*canvas.width;}
         });
+        if(Date.now()<end){ requestAnimationFrame(draw); }
+        else{ confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height);}
       }
-
-      function openLetter(index){
-        activeIndex = index;
-        const unlocked = getUnlockedCount();
-        if (activeIndex >= unlocked) activeIndex = unlocked - 1;
-        const L = LETTERS[activeIndex];
-
-        ordinal.textContent = `${activeIndex + 1} / 26`;
-        bigLetter.textContent = L.char;
-
-        // Audio button is there; we enable it so UI works (file hookup is next step)
-        playBtn.disabled = false;
-
-        modal.classList.add('show');
-      }
-
-      function renderAll(){
-        // Hello visibility
-        if (startTs == null){ hello.classList.remove('hide'); } else { hello.classList.add('hide'); }
-        renderHeader();
-        renderProgress();
-        renderGrid();
-      }
-
-      function tick(){
-        renderHeader();
-        // Update ETAs on locked tiles
-        const unlocked = getUnlockedCount();
-        const tiles = grid.querySelectorAll('.tile');
-        tiles.forEach((t, idx) => {
-          if (idx >= unlocked && startTs != null){
-            const etaEl = t.querySelector('.eta');
-            if (!etaEl) return;
-            const etaMs = startTs + idx * MS_DAY - now();
-            etaEl.textContent = (etaMs>0) ? "あと " + fmt(etaMs) : "もうすぐ";
-          }
-        });
-        renderProgress();
-      }
-    })();
+      draw();
+    }
+    window.onresize=resize;
+    function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
+    resize();
   </script>
 </body>
 </html>
