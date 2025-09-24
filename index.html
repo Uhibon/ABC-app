@@ -1,91 +1,445 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Slideshow</title>
-  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Booha ABC</title>
+  <meta name="description" content="Unlock one new letter every 24 hours. Booha ABC." />
+
   <style>
+    :root{
+      --bg-blur: 6px;
+      --tile-radius: 18px;
+      --tile-shadow: 0 8px 18px rgba(0,0,0,.12);
+      --ring: 3px;
+      --maxw: 1080px;
+      --ink: #111;
+      --muted: #6b7280;
+      --paper: #ffffff;
+      --soft: #f6f7f9;
+      --accent: #111; /* progress bar */
+      --lock: #c7cad1;
+      --tile-border: #e6e8ee;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: sans-serif;
-      background: #f2f2f2;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      color: var(--ink);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: #fff;
     }
-    .swiper {
-      width: 95%;
-      max-width: 900px;
-      height: 90vh;
+
+    /* Background */
+    .bg {
+      position: fixed; inset: 0;
+      background: url("./booha-background.jpg") center/800px repeat;
+      filter: blur(var(--bg-blur)) saturate(105%) brightness(101%);
+      transform: translateZ(0);
     }
-    .swiper-slide img {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
+    .bg-overlay {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,.78), rgba(255,255,255,.86) 40%, rgba(255,255,255,.96));
     }
+
+    /* App shell */
+    .container {
+      position: relative;
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: 24px 16px 56px;
+    }
+
+    header.appbar {
+      display: flex; gap: 16px; align-items: flex-end; justify-content: space-between;
+      margin: 8px 0 14px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .brand img {
+      width: 56px; height: 56px; object-fit: contain;
+      filter: drop-shadow(0 6px 12px rgba(0,0,0,.18));
+    }
+    .brand h1 {
+      margin: 0; font-size: clamp(22px, 4vw, 30px); line-height: 1.05; font-weight: 900;
+      letter-spacing: .2px;
+    }
+    .sub {
+      margin: 2px 0 0; color: var(--muted); font-size: 13px;
+    }
+
+    .stats {
+      display: grid; gap: 8px; text-align: right; font-size: 12px; color: var(--muted);
+    }
+    .countdown strong { color: var(--ink); }
+
+    /* Progress */
+    .progress {
+      margin: 10px 0 20px;
+    }
+    .bar {
+      height: 10px; background: #e9ebf0; border-radius: 999px; overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+    }
+    .bar > i {
+      display: block; height: 100%; background: var(--accent);
+      width: 0%;
+      transition: width .6s cubic-bezier(.2,.8,.2,1);
+    }
+    .progress small { display: inline-block; margin-top: 6px; color: var(--muted); }
+
+    /* Grid */
+    .grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    @media (min-width: 600px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+    @media (min-width: 900px) { .grid { grid-template-columns: repeat(8, 1fr); } }
+
+    .tile {
+      position: relative;
+      aspect-ratio: 1/1;
+      border-radius: var(--tile-radius);
+      background: var(--paper);
+      box-shadow: var(--tile-shadow);
+      border: 1px solid var(--tile-border);
+      display: grid; place-items: center;
+      font-weight: 900; font-size: clamp(28px, 7vw, 36px);
+      letter-spacing: .5px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform .08s ease, box-shadow .08s ease;
+    }
+    .tile:active { transform: translateY(1px) scale(.995); }
+
+    .ring {
+      position: absolute; inset: calc(var(--ring) * -1);
+      border-radius: calc(var(--tile-radius) + var(--ring));
+      border: var(--ring) solid #000;
+      opacity: .08;
+      pointer-events: none;
+    }
+
+    /* Color rings per letter for playful variety */
+    .tile[data-col="1"] .ring { border-color: #ff6b6b; opacity:.35; }
+    .tile[data-col="2"] .ring { border-color: #00bcd4; opacity:.35; }
+    .tile[data-col="3"] .ring { border-color: #ffd166; opacity:.35; }
+    .tile[data-col="4"] .ring { border-color: #7c5cff; opacity:.35; }
+    .tile[data-col="5"] .ring { border-color: #6bdd8b; opacity:.35; }
+
+    .tile.locked {
+      cursor: default;
+      color: #9aa1ad;
+      background: var(--soft);
+      border-color: #e3e6ed;
+      box-shadow: none;
+    }
+    .tile.locked .ring { display: none; }
+
+    .lock {
+      width: 38%; aspect-ratio: 1/1; border-radius: 12px;
+      background: linear-gradient(180deg, #dfe3ea, #c7ccd6);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.8), 0 3px 8px rgba(0,0,0,.08);
+      position: relative;
+    }
+    .lock:before, .lock:after {
+      content:""; position: absolute; left: 50%; transform: translateX(-50%);
+      background: #b8becc;
+    }
+    .lock:before { width: 42%; height: 26%; top: -22%; border-radius: 12px 12px 0 0; }
+    .lock:after { width: 18%; height: 18%; top: 34%; border-radius: 999px; background:#8a93a6; }
+
+    .eta {
+      position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+      font-size: 11px; color: var(--muted);
+    }
+
+    /* Detail card (modal-ish) */
+    .detail {
+      margin-top: 18px;
+      background: var(--paper);
+      border: 1px solid var(--tile-border);
+      border-radius: 18px;
+      box-shadow: var(--tile-shadow);
+      padding: 16px;
+    }
+    .detail h2 {
+      margin: 0; font-size: 28px; line-height: 1.1;
+    }
+    .detail p { margin: 6px 0 0; color: var(--muted); }
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .btn {
+      border: 1px solid var(--tile-border);
+      background: #fff; padding: 10px 14px; border-radius: 12px;
+      font-weight: 700; cursor: pointer;
+    }
+    .btn:active { transform: translateY(1px); }
+
+    /* HELLO / START screen */
+    .hello {
+      position: fixed; inset: 0; display: grid; place-items: center;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,.85), rgba(255,255,255,.94));
+      transition: opacity .35s ease;
+      z-index: 50;
+    }
+    .hello-card {
+      text-align: center;
+      background: #ffffffd9; backdrop-filter: blur(8px);
+      border: 1px solid #e7e9ef;
+      border-radius: 24px; padding: 26px 22px;
+      box-shadow: 0 12px 28px rgba(0,0,0,.14);
+      max-width: 520px;
+    }
+    .hello-card img { width: 120px; height: 120px; object-fit: contain; }
+    .hello-card h1 { margin: 12px 0 6px; font-size: 28px; line-height: 1.05; }
+    .hello-card p { margin: 4px 0; color: var(--muted); font-size: 14px; }
+    .hello .start {
+      margin-top: 14px;
+      background: #111; color: #fff; border: 0; border-radius: 14px; padding: 12px 16px;
+      font-weight: 800; letter-spacing: .2px; cursor: pointer;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
+    }
+    .hello .start:active { transform: translateY(1px); }
+    .hide { opacity: 0; pointer-events: none; }
+    .footnote { margin-top: 8px; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="bg-overlay" aria-hidden="true"></div>
 
-  <div class="swiper">
-    <div class="swiper-wrapper">
-      <div class="swiper-slide"><img src="01.jpg" alt="01"></div>
-      <div class="swiper-slide"><img src="02.jpg" alt="02"></div>
-      <div class="swiper-slide"><img src="03.jpg" alt="03"></div>
-      <div class="swiper-slide"><img src="04.jpg" alt="04"></div>
-      <div class="swiper-slide"><img src="05.jpg" alt="05"></div>
-      <div class="swiper-slide"><img src="06.jpg" alt="06"></div>
-      <div class="swiper-slide"><img src="07.jpg" alt="07"></div>
-      <div class="swiper-slide"><img src="08.jpg" alt="08"></div>
-      <div class="swiper-slide"><img src="09.jpg" alt="09"></div>
-      <div class="swiper-slide"><img src="10.jpg" alt="10"></div>
-      <div class="swiper-slide"><img src="11.jpg" alt="11"></div>
-      <div class="swiper-slide"><img src="12.jpg" alt="12"></div>
-      <div class="swiper-slide"><img src="13.jpg" alt="13"></div>
-      <div class="swiper-slide"><img src="14.jpg" alt="14"></div>
-      <div class="swiper-slide"><img src="15.jpg" alt="15"></div>
-      <div class="swiper-slide"><img src="16.jpg" alt="16"></div>
-      <div class="swiper-slide"><img src="17.jpg" alt="17"></div>
-      <div class="swiper-slide"><img src="18.jpg" alt="18"></div>
-      <div class="swiper-slide"><img src="19.jpg" alt="19"></div>
-      <div class="swiper-slide"><img src="20.jpg" alt="20"></div>
-      <div class="swiper-slide"><img src="21.jpg" alt="21"></div>
-      <div class="swiper-slide"><img src="22.jpg" alt="22"></div>
-      <div class="swiper-slide"><img src="23.jpg" alt="23"></div>
-      <div class="swiper-slide"><img src="24.jpg" alt="24"></div>
-      <div class="swiper-slide"><img src="25.jpg" alt="25"></div>
-      <div class="swiper-slide"><img src="26.jpg" alt="26"></div>
-      <div class="swiper-slide"><img src="27.jpg" alt="27"></div>
-      <div class="swiper-slide"><img src="28.jpg" alt="28"></div>
-      <div class="swiper-slide"><img src="29.jpg" alt="29"></div>
-      <div class="swiper-slide"><img src="30.jpg" alt="30"></div>
-      <div class="swiper-slide"><img src="31.jpg" alt="31"></div>
-      <div class="swiper-slide"><img src="32.jpg" alt="32"></div>
-      <div class="swiper-slide"><img src="33.jpg" alt="33"></div>
+  <!-- Hello / Start screen -->
+  <div id="hello" class="hello">
+    <div class="hello-card">
+      <img src="./playful-pink-booha.png" alt="Booha ghost logo" />
+      <h1>Hello! 👋</h1>
+      <p>Welcome to <strong>Booha ABC</strong>. Unlock one new letter every 24 hours after you start.</p>
+      <p>Please use the <strong>same device</strong> to keep your progress.</p>
+      <button id="btnStart" class="start">Start</button>
+      <div class="footnote">Already started before? We’ll continue from where you left off.</div>
     </div>
-
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-pagination"></div>
   </div>
 
-  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-  <script>
-    const swiper = new Swiper('.swiper', {
-      loop: false,
-      navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev',
-      },
-      pagination: {
-        el: '.swiper-pagination',
-        clickable: true,
-      },
-      grabCursor: true,
-    });
-  </script>
+  <div class="container">
+    <header class="appbar">
+      <div class="brand">
+        <img src="./playful-pink-booha.png" alt="Booha ghost" />
+        <div>
+          <h1>Booha ABC</h1>
+          <div class="sub">One letter unlocks every 24 hours after you press Start.</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div id="startedAt">Started: —</div>
+        <div id="countdown" class="countdown">Next unlock in: <strong>—:—:—</strong></div>
+      </div>
+    </header>
 
+    <section class="progress">
+      <div class="bar"><i id="barFill" style="width:0%"></i></div>
+      <small id="progressText">0/26</small>
+    </section>
+
+    <section id="grid" class="grid" aria-live="polite"></section>
+
+    <section id="detail" class="detail" hidden>
+      <div style="font-size:12px; color:var(--muted);" id="ordinal">Letter 1 of 26</div>
+      <h2 id="letterTitle">A</h2>
+      <p id="letterDesc">A is for …</p>
+      <div class="actions">
+        <button class="btn" id="prevBtn">Prev</button>
+        <button class="btn" id="nextBtn">Next</button>
+        <button class="btn" id="closeBtn" style="margin-left:auto">Close</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function(){
+      const MS_DAY = 24 * 60 * 60 * 1000;
+      const LS_KEY = "abc_app_start_ts";
+      const now = () => Date.now();
+
+      const LETTERS = Array.from({length:26}, (_,i) => {
+        const char = String.fromCharCode(65 + i);
+        return { id: i, char, word: `${char} is for …` };
+      });
+
+      // State
+      let startTs = readStart();
+      let activeIndex = null;
+
+      // Elements
+      const hello = document.getElementById('hello');
+      const btnStart = document.getElementById('btnStart');
+      const startedAt = document.getElementById('startedAt');
+      const countdownEl = document.getElementById('countdown');
+      const barFill = document.getElementById('barFill');
+      const progressText = document.getElementById('progressText');
+      const grid = document.getElementById('grid');
+
+      const detail = document.getElementById('detail');
+      const ordinal = document.getElementById('ordinal');
+      const letterTitle = document.getElementById('letterTitle');
+      const letterDesc = document.getElementById('letterDesc');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const closeBtn = document.getElementById('closeBtn');
+
+      // Init
+      renderAll();
+      setInterval(tick, 1000);
+
+      // Handlers
+      btnStart.addEventListener('click', () => {
+        if (startTs == null) {
+          startTs = Date.now(); // save first start
+          localStorage.setItem(LS_KEY, String(startTs));
+        }
+        hello.classList.add('hide');
+        renderAll();
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (activeIndex == null) return;
+        const unlocked = getUnlockedCount();
+        activeIndex = Math.max(0, activeIndex - 1);
+        if (activeIndex >= unlocked) activeIndex = unlocked - 1;
+        renderDetail();
+      });
+      nextBtn.addEventListener('click', () => {
+        if (activeIndex == null) return;
+        const unlocked = getUnlockedCount();
+        activeIndex = Math.min(unlocked - 1, activeIndex + 1);
+        renderDetail();
+      });
+      closeBtn.addEventListener('click', () => {
+        activeIndex = null;
+        detail.hidden = true;
+      });
+
+      // Functions
+      function readStart(){
+        const raw = localStorage.getItem(LS_KEY);
+        return raw ? Number(raw) : null;
+      }
+
+      function getUnlockedCount(){
+        if (startTs == null) return 0;
+        const elapsed = now() - startTs;
+        const days = Math.floor(elapsed / MS_DAY);
+        return Math.min(26, Math.max(1, days + 1));
+      }
+
+      function nextUnlockMs(){
+        if (startTs == null) return null;
+        const unlocked = getUnlockedCount();
+        if (unlocked >= 26) return 0;
+        const nextAt = startTs + unlocked * MS_DAY;
+        return Math.max(0, nextAt - now());
+      }
+
+      function fmt(ms){
+        if (ms == null) return "—:—:—";
+        const s = Math.floor(ms / 1000);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        const pad = n => String(n).padStart(2,'0');
+        return `${pad(h)}:${pad(m)}:${pad(ss)}`;
+      }
+
+      function renderHeader(){
+        if (startTs == null){
+          startedAt.textContent = "Started: —";
+          countdownEl.innerHTML = 'Next unlock in: <strong>—:—:—</strong>';
+        } else {
+          startedAt.textContent = "Started: " + new Date(startTs).toLocaleString();
+          const ms = nextUnlockMs();
+          countdownEl.innerHTML = (ms === 0)
+            ? 'All letters unlocked 🎉'
+            : `Next unlock in: <strong>${fmt(ms)}</strong>`;
+        }
+      }
+
+      function renderProgress(){
+        const unlocked = getUnlockedCount();
+        const pct = (unlocked / 26) * 100;
+        barFill.style.width = pct.toFixed(2) + "%";
+        progressText.textContent = `${unlocked}/26`;
+      }
+
+      function renderGrid(){
+        const unlocked = getUnlockedCount();
+        grid.innerHTML = "";
+        LETTERS.forEach((L, idx) => {
+          const tile = document.createElement('button');
+          tile.className = "tile";
+          tile.dataset.col = (idx % 5) + 1;
+
+          if (idx < unlocked){
+            tile.innerHTML = `<span>${L.char}</span><span class="ring"></span>`;
+            tile.addEventListener('click', () => {
+              activeIndex = idx;
+              renderDetail();
+            });
+          } else {
+            tile.classList.add('locked');
+            const eta = startTs == null ? null : startTs + (idx) * MS_DAY - now();
+            tile.innerHTML = `<div class="lock"></div><div class="eta">${eta && eta>0 ? "in " + fmt(eta) : "soon"}</div>`;
+          }
+
+          grid.appendChild(tile);
+        });
+      }
+
+      function renderDetail(){
+        if (activeIndex == null) return;
+        const unlocked = getUnlockedCount();
+        if (activeIndex >= unlocked){ activeIndex = unlocked - 1; }
+        const L = LETTERS[activeIndex];
+
+        ordinal.textContent = `Letter ${activeIndex + 1} of 26`;
+        letterTitle.textContent = L.char;
+        letterDesc.textContent = `${L.word}`;
+
+        prevBtn.disabled = activeIndex <= 0;
+        nextBtn.disabled = activeIndex >= unlocked - 1;
+
+        detail.hidden = false;
+      }
+
+      function renderAll(){
+        // Hello screen visibility
+        if (startTs == null){
+          hello.classList.remove('hide');
+        } else {
+          hello.classList.add('hide');
+        }
+        renderHeader();
+        renderProgress();
+        renderGrid();
+        if (activeIndex != null) renderDetail();
+      }
+
+      function tick(){
+        // live countdown + ETAs on locked tiles
+        renderHeader();
+        const lockedEtas = grid.querySelectorAll('.tile.locked .eta');
+        const unlocked = getUnlockedCount();
+        LETTERS.forEach((_, idx) => {
+          if (idx >= unlocked && startTs != null){
+            const node = lockedEtas[idx - unlocked]; // offset
+            if (!node) return;
+            const etaMs = startTs + idx * MS_DAY - now();
+            node.textContent = (etaMs>0) ? ("in " + fmt(etaMs)) : "soon";
+          }
+        });
+        renderProgress();
+      }
+    })();
+  </script>
 </body>
 </html>
