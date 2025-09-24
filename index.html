@@ -11,18 +11,23 @@
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
     .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:400px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:120px}
+    .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
+    .hello-card p{margin:4px 0;font-size:13px;color:#444}
     .hello-card button{margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;background:#111;color:#fff;border:0;border-radius:14px;cursor:pointer}
+
     .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
     .progress{flex:1;margin-right:12px}
     .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
     .bar>i{display:block;height:100%;background:#111;width:0%}
     .countdown{font-size:14px;color:#333}
+
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:20px;text-align:center}
-    .big-letter{font-size:20vw;font-weight:900;margin:20px 0}
-    .buttons{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px}
-    .btn-audio{padding:16px;border:0;border-radius:16px;font-size:24px;font-weight:bold;cursor:pointer;box-shadow:0 6px 12px rgba(0,0,0,.15)}
-    .btn-audio small{display:block;font-size:14px;font-weight:normal;color:#333}
-    .btn-finish{margin-top:20px;padding:16px;background:#28a745;color:#fff;font-size:22px;font-weight:bold;border:0;border-radius:16px;cursor:pointer;display:none}
+    .big-letter{font-size:26vw;font-weight:900;margin:10px 0 30px}
+    .buttons{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px}
+    .btn-audio{padding:12px;border:0;border-radius:14px;font-size:20px;font-weight:bold;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,.15)}
+    .btn-audio small{display:block;font-size:13px;font-weight:normal;color:#333}
+    .btn-finish{margin-top:16px;padding:14px;background:#28a745;color:#fff;font-size:20px;font-weight:bold;border:0;border-radius:14px;cursor:pointer;display:none}
+
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   </style>
 </head>
@@ -76,7 +81,7 @@
     const finishBtn=document.getElementById("finishBtn");
 
     let activeIndex=0; // current letter index
-    let audioStep=0; // track progress through 1..4
+    let audioStep=0; // enforce order
     let confettiRunning=false;
 
     startBtn.onclick=()=>{
@@ -108,7 +113,7 @@
 
     function showLetter(){
       const unlocked=getUnlockedCount();
-      activeIndex=unlocked-1; // show today's
+      activeIndex=unlocked-1; // today’s letter
       bigLetter.textContent=letters[activeIndex];
       barFill.style.width=(unlocked/26*100)+"%";
       audioStep=0;
@@ -118,8 +123,13 @@
     function playAudio(step){
       const L=letters[activeIndex];
       let name=L.repeat(step); // A, AA, AAA, AAAA
-      let audio=new Audio(`assets/audio/${name}.m4a`);
-      audio.play();
+      let src=`assets/audio/${name}.m4a`;
+      console.log("Trying to play:", src);
+      let audio=new Audio(src);
+      audio.play().catch(err=>{
+        alert("Audio not found or cannot play: " + src);
+        console.error(err);
+      });
     }
 
     btns.forEach((b,i)=>{
