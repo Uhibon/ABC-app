@@ -66,12 +66,21 @@
       margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;
       font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;
       box-shadow:0 10px 18px rgba(0,0,0,.18);
-      transition: transform 0.15s ease, background-color .12s ease;
     }
     .btn-finish:active{transform:scale(0.92)}
     .btn-finish.pressed{background:#7c5cff}
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+    /* ---- TEMP test buttons ---- */
+    .dev-tools{
+      position:fixed;right:12px;bottom:12px;display:flex;gap:8px;z-index:9999
+    }
+    .dev-tools button{
+      background:#111;color:#fff;border:0;border-radius:12px;
+      padding:8px 12px;font-size:12px;font-weight:800;opacity:.85;cursor:pointer
+    }
+    .dev-tools button:hover{opacity:1}
   </style>
 </head>
 <body>
@@ -119,6 +128,12 @@
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
+  <!-- TEMP dev tools -->
+  <div class="dev-tools">
+    <button id="devReset">リセット</button>
+    <button id="devUnlock">全解放</button>
+  </div>
+
   <canvas id="confetti"></canvas>
 
   <script>
@@ -141,10 +156,14 @@
     const btn4 = document.getElementById("btn4");
     const finishBtn = document.getElementById("finishBtn");
 
+    const devReset = document.getElementById("devReset");
+    const devUnlock = document.getElementById("devUnlock");
+
     let activeIndex = 0;
     let audioStep = 0;
     let confettiRunning = false;
     let doneSet = loadDoneSet();
+    let currentLessonEl = null; // ensure only one lesson audio at a time
 
     /* ---------- UI click sounds with cache-busting + fallback ---------- */
     const clickSounds = {
@@ -155,25 +174,36 @@
       "finish": { m4a: "assets/sfx/click4.m4a", mp3: "assets/sfx/click4.mp3" }
     };
 
+    // Play SFX first, then resolve; has timeout fallback so UI feels instant.
     function playUISound(key){
-      const files = clickSounds[key];
-      if (!files) return;
+      return new Promise((resolve) => {
+        const files = clickSounds[key];
+        if (!files){ resolve(); return; }
 
-      const el = new Audio();
-      const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
-      const bust = `?v=${Date.now().toString().slice(-6)}`;
-      const order = canMp4 ? [files.m4a + bust, files.mp3 + bust] : [files.mp3 + bust, files.m4a + bust];
-      let i = 0;
+        const el = new Audio();
+        const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
+        const bust = `?v=${Date.now().toString().slice(-6)}`;
+        const order = canMp4 ? [files.m4a + bust, files.mp3 + bust] : [files.mp3 + bust, files.m4a + bust];
+        let i = 0;
+        let settled = false;
 
-      function tryPlay(){
-        if (i >= order.length) return;
-        el.src = order[i++];
-        el.currentTime = 0;
-        const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(()=>{ tryPlay(); });
-      }
-      el.onerror = () => { tryPlay(); };
-      tryPlay();
+        const done = () => { if (!settled){ settled = true; resolve(); } };
+        const safetyTimer = setTimeout(done, 180); // slight delay then start lesson
+
+        function tryPlay(){
+          if (i >= order.length){ done(); return; }
+          el.src = order[i++];
+          el.currentTime = 0;
+          // resolve when click ends (if it ever does), but don't block UI
+          el.addEventListener('ended', done, { once:true });
+          const p = el.play();
+          if (p && typeof p.catch === "function") {
+            p.catch(() => { tryPlay(); });
+          }
+        }
+        el.onerror = () => { tryPlay(); };
+        tryPlay();
+      });
     }
 
     /* ---------- Start flow ---------- */
@@ -251,12 +281,19 @@
       btn4.disabled = !(audioStep === 3);
     }
 
-    /* ---------- Lesson audio ---------- */
-    function playAudioFor(step){
+    /* ---------- Lesson audio: one-at-a-time, starts after SFX ---------- */
+    function playLesson(step){
+      // stop any currently playing lesson audio
+      if (currentLessonEl){
+        try { currentLessonEl.pause(); } catch(e){}
+        currentLessonEl = null;
+      }
       const L = letters[activeIndex];
       const name = L.repeat(step);
       const files = { m4a: `assets/audio/${name}.m4a`, mp3: `assets/audio/${name}.mp3` };
       const el = new Audio();
+      currentLessonEl = el;
+
       const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
       const bust = `?v=${Date.now().toString().slice(-6)}`;
       const order = canMp4 ? [files.m4a+bust, files.mp3+bust] : [files.mp3+bust, files.m4a+bust];
@@ -277,38 +314,47 @@
       setTimeout(()=>el.classList.remove("pressed"), 150);
     }
 
-    /* ---------- Button handlers ---------- */
-    btn1.onclick = () => {
-      playUISound("1"); flashPressed(btn1);
+    /* ---------- Button handlers: SFX first, then lesson ---------- */
+    btn1.onclick = async () => {
+      flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
-      setCard(1); playAudioFor(1);
+      setCard(1);
+      await playUISound("1");
+      playLesson(1);
       if(audioStep===0){ audioStep=1; setButtonStates(); }
     };
-    btn2.onclick = () => {
-      playUISound("2"); flashPressed(btn2);
-      if(doneSet.has(letters[activeIndex])){ setCard(2); playAudioFor(2); return; }
+    btn2.onclick = async () => {
+      flashPressed(btn2);
+      if(doneSet.has(letters[activeIndex])){ setCard(2); await playUISound("2"); playLesson(2); return; }
       if(audioStep!==1) return;
-      setCard(2); playAudioFor(2);
+      setCard(2);
+      await playUISound("2");
+      playLesson(2);
       audioStep=2; setButtonStates();
     };
-    btn3.onclick = () => {
-      playUISound("3"); flashPressed(btn3);
-      if(doneSet.has(letters[activeIndex])){ setCard(3); playAudioFor(3); return; }
+    btn3.onclick = async () => {
+      flashPressed(btn3);
+      if(doneSet.has(letters[activeIndex])){ setCard(3); await playUISound("3"); playLesson(3); return; }
       if(audioStep!==2) return;
-      setCard(3); playAudioFor(3);
+      setCard(3);
+      await playUISound("3");
+      playLesson(3);
       audioStep=3; setButtonStates();
     };
-    btn4.onclick = () => {
-      playUISound("4"); flashPressed(btn4);
-      if(doneSet.has(letters[activeIndex])){ setCard(4); playAudioFor(4); return; }
+    btn4.onclick = async () => {
+      flashPressed(btn4);
+      if(doneSet.has(letters[activeIndex])){ setCard(4); await playUISound("4"); playLesson(4); return; }
       if(audioStep!==3) return;
-      setCard(4); playAudioFor(4);
+      setCard(4);
+      await playUISound("4");
+      playLesson(4);
       audioStep=4; setButtonStates();
       finishBtn.style.display = "inline-block";
     };
 
-    finishBtn.onclick = () => {
-      playUISound("finish"); flashPressed(finishBtn);
+    finishBtn.onclick = async () => {
+      flashPressed(finishBtn);
+      await playUISound("finish");
       const L = letters[activeIndex];
       if (!doneSet.has(L)){
         startConfetti(5000);
@@ -361,6 +407,20 @@
     window.onresize = resize;
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
+
+    /* ---------- TEMP dev buttons ---------- */
+    devReset.onclick = () => {
+      localStorage.removeItem(LS_KEY_START);
+      localStorage.removeItem(LS_KEY_DONE);
+      location.reload();
+    };
+    devUnlock.onclick = () => {
+      // set start date ~30 days ago so everything is unlocked
+      const past = Date.now() - 30*MS_DAY;
+      localStorage.setItem(LS_KEY_START, String(past));
+      localStorage.removeItem(LS_KEY_DONE);
+      location.reload();
+    };
   </script>
 </body>
 </html>
