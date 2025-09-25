@@ -120,7 +120,6 @@
   </div>
 
   <canvas id="confetti"></canvas>
-  <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
 
   <script>
     const MS_DAY = 24*60*60*1000;
@@ -141,13 +140,46 @@
     const btn3 = document.getElementById("btn3");
     const btn4 = document.getElementById("btn4");
     const finishBtn = document.getElementById("finishBtn");
-    const clickAudio = document.getElementById("clickAudio");
 
     let activeIndex = 0;
     let audioStep = 0;
     let confettiRunning = false;
     let doneSet = loadDoneSet();
 
+    /* ---------- UI click sounds with fallback ---------- */
+    // Map each UI key to both .m4a and .mp3 variants.
+    const clickSounds = {
+      "1": { m4a: "assets/sfx/click.m4a",  mp3: "assets/sfx/click.mp3" },
+      "2": { m4a: "assets/sfx/click1.m4a", mp3: "assets/sfx/click1.mp3" },
+      "3": { m4a: "assets/sfx/click2.m4a", mp3: "assets/sfx/click2.mp3" },
+      "4": { m4a: "assets/sfx/click3.m4a", mp3: "assets/sfx/click3.mp3" },
+      "finish": { m4a: "assets/sfx/click4.m4a", mp3: "assets/sfx/click4.mp3" }
+    };
+
+    function playUISound(key){
+      const files = clickSounds[key];
+      if (!files) return;
+
+      const el = new Audio();
+      // Prefer a format the browser claims it can play; still fall back on error (404 etc.)
+      const prefersMp4 = !!el.canPlayType && el.canPlayType("audio/mp4"); // m4a container
+      const order = prefersMp4 ? [files.m4a, files.mp3] : [files.mp3, files.m4a];
+      let i = 0;
+
+      function tryPlay(){
+        if (i >= order.length) return;
+        el.src = order[i++];
+        el.currentTime = 0;
+        const p = el.play();
+        if (p && typeof p.catch === "function") {
+          p.catch(() => { tryPlay(); });
+        }
+      }
+      el.onerror = () => { tryPlay(); };
+      tryPlay();
+    }
+
+    /* ---------- Start flow ---------- */
     startBtn.onclick = () => {
       if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
       hello.style.display = "none";
@@ -222,19 +254,25 @@
       btn4.disabled = !(audioStep === 3);
     }
 
+    /* ---------- Lesson audio (A..A, A....AAAAA) ---------- */
+    // Keeps your original behavior; add mp3 fallback as well.
     function playAudioFor(step){
       const L = letters[activeIndex];
       const name = L.repeat(step);
-      const src = `assets/audio/${name}.m4a`;
-      const audio = new Audio(src);
-      audio.play().catch(()=>{});
-    }
-
-    function playClick(){
-      try {
-        clickAudio.currentTime = 0;
-        clickAudio.play().catch(()=>{});
-      } catch(e) {}
+      const files = { m4a: `assets/audio/${name}.m4a`, mp3: `assets/audio/${name}.mp3` };
+      const el = new Audio();
+      const prefersMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
+      const order = prefersMp4 ? [files.m4a, files.mp3] : [files.mp3, files.m4a];
+      let i = 0;
+      function tryPlay(){
+        if(i>=order.length) return;
+        el.src = order[i++];
+        el.currentTime = 0;
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(()=>{ tryPlay(); });
+      }
+      el.onerror = ()=>{ tryPlay(); };
+      tryPlay();
     }
 
     function flashPressed(el){
@@ -242,24 +280,29 @@
       setTimeout(()=>el.classList.remove("pressed"), 150);
     }
 
-    btn1.onclick = () => { playClick(); flashPressed(btn1);
+    /* ---------- Button handlers with per-button sounds ---------- */
+    btn1.onclick = () => {
+      playUISound("1"); flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
       setCard(1); playAudioFor(1);
       if(audioStep===0){ audioStep=1; setButtonStates(); }
     };
-    btn2.onclick = () => { playClick(); flashPressed(btn2);
+    btn2.onclick = () => {
+      playUISound("2"); flashPressed(btn2);
       if(doneSet.has(letters[activeIndex])){ setCard(2); playAudioFor(2); return; }
       if(audioStep!==1) return;
       setCard(2); playAudioFor(2);
       audioStep=2; setButtonStates();
     };
-    btn3.onclick = () => { playClick(); flashPressed(btn3);
+    btn3.onclick = () => {
+      playUISound("3"); flashPressed(btn3);
       if(doneSet.has(letters[activeIndex])){ setCard(3); playAudioFor(3); return; }
       if(audioStep!==2) return;
       setCard(3); playAudioFor(3);
       audioStep=3; setButtonStates();
     };
-    btn4.onclick = () => { playClick(); flashPressed(btn4);
+    btn4.onclick = () => {
+      playUISound("4"); flashPressed(btn4);
       if(doneSet.has(letters[activeIndex])){ setCard(4); playAudioFor(4); return; }
       if(audioStep!==3) return;
       setCard(4); playAudioFor(4);
@@ -267,7 +310,8 @@
       finishBtn.style.display = "inline-block";
     };
 
-    finishBtn.onclick = () => { playClick(); flashPressed(finishBtn);
+    finishBtn.onclick = () => {
+      playUISound("finish"); flashPressed(finishBtn);
       const L = letters[activeIndex];
       if (!doneSet.has(L)){
         startConfetti(5000);
