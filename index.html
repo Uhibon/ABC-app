@@ -6,11 +6,9 @@
   <title>ブーハABC</title>
   <style>
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    /* Background stretched */
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
-    /* Hello / Start */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
     .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:120px;height:120px;object-fit:contain}
@@ -18,14 +16,12 @@
     .hello-card p{margin:4px 0;font-size:13px;color:#444}
     .hello-card button{margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;background:#111;color:#fff;border:0;border-radius:14px;cursor:pointer}
 
-    /* Top bar */
     .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
     .progress{flex:1;margin-right:12px}
     .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden}
     .bar>i{display:block;height:100%;background:#111;width:0%}
     .countdown{font-size:14px;color:#333}
 
-    /* Letter screen with card */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;text-align:center;gap:16px}
     .card-wrap{
       display:grid;place-items:center;
@@ -35,15 +31,8 @@
       box-shadow:0 16px 32px rgba(0,0,0,.18), 0 1px 0 rgba(255,255,255,.8) inset;
       padding:8px;
     }
-    .card-wrap img{
-      max-width:100%;
-      max-height:70vh;
-      width:auto;height:auto;
-      object-fit:contain;
-      border-radius:14px;
-    }
+    .card-wrap img{max-width:100%;max-height:70vh;width:auto;height:auto;object-fit:contain;border-radius:14px;}
 
-    /* Play buttons */
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px, 92vw)}
     .btn-audio{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
@@ -72,7 +61,6 @@
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* ---- TEMP test buttons ---- */
     .dev-tools{
       position:fixed;right:12px;bottom:12px;display:flex;gap:8px;z-index:9999
     }
@@ -87,7 +75,6 @@
   <div class="bg"></div>
   <div class="overlay"></div>
 
-  <!-- Hello -->
   <div id="hello" class="hello">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
@@ -98,40 +85,28 @@
     </div>
   </div>
 
-  <!-- Top bar -->
   <div class="topbar">
     <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
     <div id="countdown" class="countdown">—:—:—</div>
   </div>
 
-  <!-- Letter of the day -->
   <div class="letter-screen">
     <div class="card-wrap">
       <img id="cardImg" src="./1.jpg" alt="カード1" />
     </div>
-
     <div class="buttons">
-      <button id="btn1" class="btn-audio btn1">
-        <span class="num">①</span><small>リピート</small>
-      </button>
-      <button id="btn2" class="btn-audio btn2">
-        <span class="num">②</span><small>いっしょに読む</small>
-      </button>
-      <button id="btn3" class="btn-audio btn3">
-        <span class="num">③</span><small>リピート</small>
-      </button>
-      <button id="btn4" class="btn-audio btn4">
-        <span class="num">④</span><small>スペシャル！</small>
-      </button>
+      <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
+      <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
+      <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
+      <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
-
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
-  <!-- TEMP dev tools -->
   <div class="dev-tools">
     <button id="devReset">リセット</button>
     <button id="devUnlock">全解放</button>
+    <button id="devNext">Next ▶</button>
   </div>
 
   <canvas id="confetti"></canvas>
@@ -143,30 +118,27 @@
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
     let startTs = localStorage.getItem(LS_KEY_START)?Number(localStorage.getItem(LS_KEY_START)):null;
-
     const hello = document.getElementById("hello");
     const startBtn = document.getElementById("startBtn");
     const barFill = document.getElementById("barFill");
     const countdown = document.getElementById("countdown");
-
     const cardImg = document.getElementById("cardImg");
     const btn1 = document.getElementById("btn1");
     const btn2 = document.getElementById("btn2");
     const btn3 = document.getElementById("btn3");
     const btn4 = document.getElementById("btn4");
     const finishBtn = document.getElementById("finishBtn");
-
     const devReset = document.getElementById("devReset");
     const devUnlock = document.getElementById("devUnlock");
+    const devNext = document.getElementById("devNext");
 
-    let activeIndex = 0;       // 0 = A, 1 = B, ...
-    let audioStep = 0;         // 0→1→2→3→4 flow
+    let activeIndex = 0; // 0=A, 1=B...
+    let audioStep = 0;
     let confettiRunning = false;
     let doneSet = loadDoneSet();
-    let currentLessonEl = null; // ensure only one lesson audio at a time
+    let currentLessonEl = null;
+    const sfxEl = new Audio();
 
-    /* ---------- UI SFX (single shared Audio) ---------- */
-    const sfxEl = new Audio(); // shared, so SFX never stack
     const clickSounds = {
       "1": { m4a: "assets/sfx/click.m4a",  mp3: "assets/sfx/click.mp3" },
       "2": { m4a: "assets/sfx/click1.m4a", mp3: "assets/sfx/click1.mp3" },
@@ -175,262 +147,82 @@
       "finish": { m4a: "assets/sfx/click4.m4a", mp3: "assets/sfx/click4.mp3" }
     };
 
-    // Plays SFX, resolves when SFX actually ends (or after a max cap), then waits +500ms.
     function playUISoundThenDelay(key){
-      return new Promise((resolve) => {
+      return new Promise((resolve)=>{
         const files = clickSounds[key];
-        if (!files){ setTimeout(resolve, 500); return; }
-
-        try { sfxEl.pause(); } catch(e){}
-        sfxEl.currentTime = 0;
-
+        if(!files){ setTimeout(resolve,300); return; }
+        try{sfxEl.pause();}catch(e){}
+        sfxEl.currentTime=0;
         const canMp4 = !!sfxEl.canPlayType && sfxEl.canPlayType("audio/mp4");
         const bust = `?v=${Date.now().toString().slice(-6)}`;
-        const order = canMp4 ? [files.m4a + bust, files.mp3 + bust] : [files.mp3 + bust, files.m4a + bust];
-        let i = 0;
-
-        function doneAfterDelay(){
-          // Wait 0.5s AFTER SFX finishes so lesson never overlaps SFX tail
-          setTimeout(resolve, 500);
-        }
-
+        const order = canMp4 ? [files.m4a+bust,files.mp3+bust] : [files.mp3+bust,files.m4a+bust];
+        let i=0;
+        function doneAfterDelay(){ setTimeout(resolve,300); }
         function tryPlay(){
-          if (i >= order.length){ doneAfterDelay(); return; }
-          sfxEl.src = order[i++];
-          sfxEl.currentTime = 0;
-
-          // Safety cap: if file doesn't fire 'ended' (very short clip etc.)
-          const cap = setTimeout(doneAfterDelay, 1200);
-
-          sfxEl.onended = () => { clearTimeout(cap); doneAfterDelay(); };
-          const p = sfxEl.play();
-          if (p && typeof p.catch === "function") {
-            p.catch(() => { tryPlay(); });
-          }
+          if(i>=order.length){ doneAfterDelay(); return; }
+          sfxEl.src=order[i++]; sfxEl.currentTime=0;
+          const cap=setTimeout(doneAfterDelay,1200);
+          sfxEl.onended=()=>{clearTimeout(cap); doneAfterDelay();};
+          const p=sfxEl.play();
+          if(p&&typeof p.catch==="function") p.catch(()=>{tryPlay();});
         }
-        sfxEl.onerror = () => { tryPlay(); };
+        sfxEl.onerror=()=>{tryPlay();};
         tryPlay();
       });
     }
 
-    /* ---------- Start flow ---------- */
-    startBtn.onclick = () => {
-      if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
-      hello.style.display = "none";
-      showLetter();
+    startBtn.onclick=()=>{
+      if(!startTs){startTs=Date.now();localStorage.setItem(LS_KEY_START,startTs);}
+      hello.style.display="none"; showLetter();
     };
-
-    function loadDoneSet(){
-      try {
-        const raw = localStorage.getItem(LS_KEY_DONE);
-        const arr = raw ? JSON.parse(raw) : [];
-        return new Set(arr);
-      } catch { return new Set(); }
-    }
-    function saveDoneSet(){
-      localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet]));
-    }
-
-    function getUnlockedCount(){
-      if(!startTs) return 0;
-      const elapsed = Date.now() - startTs;
-      const days = Math.floor(elapsed / MS_DAY);
-      return Math.min(26, Math.max(1, days + 1));
-    }
-    function nextUnlockMs(){
-      if(!startTs) return null;
-      const unlocked = getUnlockedCount();
-      if(unlocked >= 26) return 0;
-      return (startTs + unlocked*MS_DAY) - Date.now();
-    }
-    function fmt(ms){
-      if(ms == null) return "—:—:—";
-      const s = Math.floor(ms/1000);
-      const h = String(Math.floor(s/3600)).padStart(2,"0");
-      const m = String(Math.floor((s%3600)/60)).padStart(2,"0");
-      const ss = String(s%60).padStart(2,"0");
-      return `${h}:${m}:${ss}`;
-    }
+    function loadDoneSet(){try{const raw=localStorage.getItem(LS_KEY_DONE);const arr=raw?JSON.parse(raw):[];return new Set(arr);}catch{return new Set();}}
+    function saveDoneSet(){localStorage.setItem(LS_KEY_DONE,JSON.stringify([...doneSet]));}
+    function getUnlockedCount(){if(!startTs)return 0;const days=Math.floor((Date.now()-startTs)/MS_DAY);return Math.min(26,Math.max(1,days+1));}
+    function nextUnlockMs(){if(!startTs)return null;const unlocked=getUnlockedCount();if(unlocked>=26)return 0;return (startTs+unlocked*MS_DAY)-Date.now();}
+    function fmt(ms){if(ms==null)return"—:—:—";const s=Math.floor(ms/1000);const h=String(Math.floor(s/3600)).padStart(2,"0");const m=String(Math.floor((s%3600)/60)).padStart(2,"0");const ss=String(s%60).padStart(2,"0");return`${h}:${m}:${ss}`;}
 
     function showLetter(){
-      const unlocked = getUnlockedCount();
-      activeIndex = unlocked - 1; // 0=A, 1=B, ...
-      barFill.style.width = (unlocked/26*100) + "%";
-
-      setCard(1); // show step 1 image by default
-
-      const L = letters[activeIndex];
-      if (doneSet.has(L)){
-        audioStep = 4;
-        setAllButtonsEnabled(true);
-        finishBtn.style.display = "none";
-      } else {
-        audioStep = 0;
-        setButtonStates();
-        finishBtn.style.display = "none";
-      }
-    }
-
-    // Map step (1..4) to image number across letters:
-    // A: 1-4, B: 5-8, C: 9-12, ...
-    function setCard(step){
-      const imgNum = activeIndex*4 + step; // activeIndex is 0-based
-      const src = `./${imgNum}.jpg`;
-      cardImg.src = src;
-      cardImg.alt = `カード${imgNum}`;
-    }
-
-    function setAllButtonsEnabled(on){
-      [btn1,btn2,btn3,btn4].forEach(b => b.disabled = !on);
-    }
-
-    function setButtonStates(){
-      btn1.disabled = !(audioStep === 0);
-      btn2.disabled = !(audioStep === 1);
-      btn3.disabled = !(audioStep === 2);
-      btn4.disabled = !(audioStep === 3);
-    }
-
-    /* ---------- Lesson audio: one-at-a-time ---------- */
-    function playLesson(step){
-      // stop any currently playing lesson audio
-      if (currentLessonEl){
-        try { currentLessonEl.pause(); } catch(e){}
-        currentLessonEl = null;
-      }
-      const L = letters[activeIndex];
-      const name = L.repeat(step); // A, AA, AAA, AAAA (or B..)
-      const files = { m4a: `assets/audio/${name}.m4a`, mp3: `assets/audio/${name}.mp3` };
-      const el = new Audio();
-      currentLessonEl = el;
-
-      const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
-      const bust = `?v=${Date.now().toString().slice(-6)}`;
-      const order = canMp4 ? [files.m4a+bust, files.mp3+bust] : [files.mp3+bust, files.m4a+bust];
-      let i = 0;
-      function tryPlay(){
-        if(i>=order.length) return;
-        el.src = order[i++];
-        el.currentTime = 0;
-        const p = el.play();
-        if (p && typeof p.catch === "function") p.catch(()=>{ tryPlay(); });
-      }
-      el.onerror = ()=>{ tryPlay(); };
-      tryPlay();
-    }
-
-    function flashPressed(el){
-      el.classList.add("pressed");
-      setTimeout(()=>el.classList.remove("pressed"), 150);
-    }
-
-    /* ---------- Button handlers: SFX -> 0.5s delay -> Lesson ---------- */
-    btn1.onclick = async () => {
-      flashPressed(btn1);
-      if(audioStep>0 && audioStep<4) return;
+      const unlocked=getUnlockedCount();
+      activeIndex=unlocked-1;
+      barFill.style.width=(unlocked/26*100)+"%";
       setCard(1);
-      await playUISoundThenDelay("1");
-      playLesson(1);
-      if(audioStep===0){ audioStep=1; setButtonStates(); }
-    };
-    btn2.onclick = async () => {
-      flashPressed(btn2);
-      if(doneSet.has(letters[activeIndex])){ setCard(2); await playUISoundThenDelay("2"); playLesson(2); return; }
-      if(audioStep!==1) return;
-      setCard(2);
-      await playUISoundThenDelay("2");
-      playLesson(2);
-      audioStep=2; setButtonStates();
-    };
-    btn3.onclick = async () => {
-      flashPressed(btn3);
-      if(doneSet.has(letters[activeIndex])){ setCard(3); await playUISoundThenDelay("3"); playLesson(3); return; }
-      if(audioStep!==2) return;
-      setCard(3);
-      await playUISoundThenDelay("3");
-      playLesson(3);
-      audioStep=3; setButtonStates();
-    };
-    btn4.onclick = async () => {
-      flashPressed(btn4);
-      if(doneSet.has(letters[activeIndex])){ setCard(4); await playUISoundThenDelay("4"); playLesson(4); return; }
-      if(audioStep!==3) return;
-      setCard(4);
-      await playUISoundThenDelay("4");
-      playLesson(4);
-      audioStep=4; setButtonStates();
-      finishBtn.style.display = "inline-block";
-    };
-
-    finishBtn.onclick = async () => {
-      flashPressed(finishBtn);
-      await playUISoundThenDelay("finish");
-      const L = letters[activeIndex];
-      if (!doneSet.has(L)){
-        startConfetti(5000);
-        doneSet.add(L);
-        saveDoneSet();
-      }
-      setAllButtonsEnabled(true);
-      finishBtn.style.display = "none";
-    };
-
-    function updateCountdown(){
-      const ms = nextUnlockMs();
-      countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
+      const L=letters[activeIndex];
+      if(doneSet.has(L)){audioStep=4;setAllButtonsEnabled(true);finishBtn.style.display="none";}
+      else{audioStep=0;setButtonStates();finishBtn.style.display="none";}
     }
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
-
-    if(startTs){ hello.style.display="none"; showLetter(); }
-
-    /* ---------- Confetti ---------- */
-    const canvas = document.getElementById("confetti");
-    const ctx = canvas.getContext("2d");
-    let confetti = [];
-    function startConfetti(duration){
-      if(confettiRunning) return;
-      confettiRunning = true;
-      resize();
-      confetti = Array.from({length:320}).map(()=>({
-        x: Math.random()*canvas.width,
-        y: Math.random()*canvas.height - canvas.height,
-        r: Math.random()*8 + 3,
-        d: Math.random()*1 + 0.5,
-        color: `hsl(${Math.random()*360},100%,50%)`
-      }));
-      const end = Date.now() + duration;
-      (function draw(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        confetti.forEach(p=>{
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
-          ctx.fillStyle = p.color; ctx.fill();
-        });
-        confetti.forEach(p=>{
-          p.y += p.d*4;
-          if(p.y>canvas.height){ p.y = -10; p.x = Math.random()*canvas.width; }
-        });
-        if(Date.now() < end){ requestAnimationFrame(draw); }
-        else { confettiRunning = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
-      })();
+    function setCard(step){const imgNum=activeIndex*4+step;cardImg.src=`./${imgNum}.jpg`;cardImg.alt=`カード${imgNum}`;}
+    function setAllButtonsEnabled(on){[btn1,btn2,btn3,btn4].forEach(b=>b.disabled=!on);}
+    function setButtonStates(){btn1.disabled=!(audioStep===0);btn2.disabled=!(audioStep===1);btn3.disabled=!(audioStep===2);btn4.disabled=!(audioStep===3);}
+    function playLesson(step){
+      if(currentLessonEl){try{currentLessonEl.pause();}catch(e){} currentLessonEl=null;}
+      const L=letters[activeIndex];const name=L.repeat(step);
+      const files={m4a:`assets/audio/${name}.m4a`,mp3:`assets/audio/${name}.mp3`};
+      const el=new Audio();currentLessonEl=el;
+      const canMp4=!!el.canPlayType&&el.canPlayType("audio/mp4");
+      const bust=`?v=${Date.now().toString().slice(-6)}`;
+      const order=canMp4?[files.m4a+bust,files.mp3+bust]:[files.mp3+bust,files.m4a+bust];
+      let i=0;function tryPlay(){if(i>=order.length)return;el.src=order[i++];el.currentTime=0;const p=el.play();if(p&&typeof p.catch==="function")p.catch(()=>{tryPlay();});}
+      el.onerror=()=>{tryPlay();};tryPlay();
     }
-    window.onresize = resize;
-    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-    resize();
+    function flashPressed(el){el.classList.add("pressed");setTimeout(()=>el.classList.remove("pressed"),150);}
 
-    /* ---------- TEMP dev buttons ---------- */
-    devReset.onclick = () => {
-      localStorage.removeItem(LS_KEY_START);
-      localStorage.removeItem(LS_KEY_DONE);
-      location.reload();
-    };
-    devUnlock.onclick = () => {
-      // set start date ~30 days ago so everything is unlocked
-      const past = Date.now() - 30*MS_DAY;
-      localStorage.setItem(LS_KEY_START, String(past));
-      localStorage.removeItem(LS_KEY_DONE);
-      location.reload();
-    };
+    btn1.onclick=async()=>{flashPressed(btn1);if(audioStep>0&&audioStep<4)return;setCard(1);await playUISoundThenDelay("1");playLesson(1);if(audioStep===0){audioStep=1;setButtonStates();}};
+    btn2.onclick=async()=>{flashPressed(btn2);if(doneSet.has(letters[activeIndex])){setCard(2);await playUISoundThenDelay("2");playLesson(2);return;}if(audioStep!==1)return;setCard(2);await playUISoundThenDelay("2");playLesson(2);audioStep=2;setButtonStates();};
+    btn3.onclick=async()=>{flashPressed(btn3);if(doneSet.has(letters[activeIndex])){setCard(3);await playUISoundThenDelay("3");playLesson(3);return;}if(audioStep!==2)return;setCard(3);await playUISoundThenDelay("3");playLesson(3);audioStep=3;setButtonStates();};
+    btn4.onclick=async()=>{flashPressed(btn4);if(doneSet.has(letters[activeIndex])){setCard(4);await playUISoundThenDelay("4");playLesson(4);return;}if(audioStep!==3)return;setCard(4);await playUISoundThenDelay("4");playLesson(4);audioStep=4;setButtonStates();finishBtn.style.display="inline-block";};
+
+    finishBtn.onclick=async()=>{flashPressed(finishBtn);await playUISoundThenDelay("finish");const L=letters[activeIndex];if(!doneSet.has(L)){startConfetti(5000);doneSet.add(L);saveDoneSet();}setAllButtonsEnabled(true);finishBtn.style.display="none";};
+
+    function updateCountdown(){const ms=nextUnlockMs();countdown.textContent=ms===0?"すべて解放":fmt(ms);}
+    setInterval(updateCountdown,1000);updateCountdown();
+    if(startTs){hello.style.display="none";showLetter();}
+
+    const canvas=document.getElementById("confetti");const ctx=canvas.getContext("2d");let confetti=[];function startConfetti(duration){if(confettiRunning)return;confettiRunning=true;resize();confetti=Array.from({length:320}).map(()=>({x:Math.random()*canvas.width,y:Math.random()*canvas.height-canvas.height,r:Math.random()*8+3,d:Math.random()*1+0.5,color:`hsl(${Math.random()*360},100%,50%)`}));const end=Date.now()+duration;(function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);confetti.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,2*Math.PI);ctx.fillStyle=p.color;ctx.fill();});confetti.forEach(p=>{p.y+=p.d*4;if(p.y>canvas.height){p.y=-10;p.x=Math.random()*canvas.width;}});if(Date.now()<end){requestAnimationFrame(draw);}else{confettiRunning=false;ctx.clearRect(0,0,canvas.width,canvas.height);}})();}
+    window.onresize=resize;function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}resize();
+
+    devReset.onclick=()=>{localStorage.removeItem(LS_KEY_START);localStorage.removeItem(LS_KEY_DONE);location.reload();};
+    devUnlock.onclick=()=>{const past=Date.now()-30*MS_DAY;localStorage.setItem(LS_KEY_START,String(past));localStorage.removeItem(LS_KEY_DONE);location.reload();};
+    devNext.onclick=()=>{activeIndex=(activeIndex+1)%letters.length;showLetter();};
   </script>
 </body>
 </html>
