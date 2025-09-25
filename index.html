@@ -159,13 +159,14 @@
     const devReset = document.getElementById("devReset");
     const devUnlock = document.getElementById("devUnlock");
 
-    let activeIndex = 0;
-    let audioStep = 0;
+    let activeIndex = 0;       // 0 = A, 1 = B, ...
+    let audioStep = 0;         // 0→1→2→3→4 flow
     let confettiRunning = false;
     let doneSet = loadDoneSet();
     let currentLessonEl = null; // ensure only one lesson audio at a time
 
-    /* ---------- UI click sounds with cache-busting + fallback ---------- */
+    /* ---------- UI SFX (single shared Audio) ---------- */
+    const sfxEl = new Audio(); // shared, so SFX never stack
     const clickSounds = {
       "1": { m4a: "assets/sfx/click.m4a",  mp3: "assets/sfx/click.mp3" },
       "2": { m4a: "assets/sfx/click1.m4a", mp3: "assets/sfx/click1.mp3" },
@@ -174,34 +175,40 @@
       "finish": { m4a: "assets/sfx/click4.m4a", mp3: "assets/sfx/click4.mp3" }
     };
 
-    // Play SFX first, then resolve; has timeout fallback so UI feels instant.
-    function playUISound(key){
+    // Plays SFX, resolves when SFX actually ends (or after a max cap), then waits +500ms.
+    function playUISoundThenDelay(key){
       return new Promise((resolve) => {
         const files = clickSounds[key];
-        if (!files){ resolve(); return; }
+        if (!files){ setTimeout(resolve, 500); return; }
 
-        const el = new Audio();
-        const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
+        try { sfxEl.pause(); } catch(e){}
+        sfxEl.currentTime = 0;
+
+        const canMp4 = !!sfxEl.canPlayType && sfxEl.canPlayType("audio/mp4");
         const bust = `?v=${Date.now().toString().slice(-6)}`;
         const order = canMp4 ? [files.m4a + bust, files.mp3 + bust] : [files.mp3 + bust, files.m4a + bust];
         let i = 0;
-        let settled = false;
 
-        const done = () => { if (!settled){ settled = true; resolve(); } };
-        const safetyTimer = setTimeout(done, 180); // slight delay then start lesson
+        function doneAfterDelay(){
+          // Wait 0.5s AFTER SFX finishes so lesson never overlaps SFX tail
+          setTimeout(resolve, 500);
+        }
 
         function tryPlay(){
-          if (i >= order.length){ done(); return; }
-          el.src = order[i++];
-          el.currentTime = 0;
-          // resolve when click ends (if it ever does), but don't block UI
-          el.addEventListener('ended', done, { once:true });
-          const p = el.play();
+          if (i >= order.length){ doneAfterDelay(); return; }
+          sfxEl.src = order[i++];
+          sfxEl.currentTime = 0;
+
+          // Safety cap: if file doesn't fire 'ended' (very short clip etc.)
+          const cap = setTimeout(doneAfterDelay, 1200);
+
+          sfxEl.onended = () => { clearTimeout(cap); doneAfterDelay(); };
+          const p = sfxEl.play();
           if (p && typeof p.catch === "function") {
             p.catch(() => { tryPlay(); });
           }
         }
-        el.onerror = () => { tryPlay(); };
+        sfxEl.onerror = () => { tryPlay(); };
         tryPlay();
       });
     }
@@ -247,10 +254,10 @@
 
     function showLetter(){
       const unlocked = getUnlockedCount();
-      activeIndex = unlocked - 1;
+      activeIndex = unlocked - 1; // 0=A, 1=B, ...
       barFill.style.width = (unlocked/26*100) + "%";
 
-      setCard(1);
+      setCard(1); // show step 1 image by default
 
       const L = letters[activeIndex];
       if (doneSet.has(L)){
@@ -264,10 +271,13 @@
       }
     }
 
-    function setCard(n){
-      const src = `./${n}.jpg`;
+    // Map step (1..4) to image number across letters:
+    // A: 1-4, B: 5-8, C: 9-12, ...
+    function setCard(step){
+      const imgNum = activeIndex*4 + step; // activeIndex is 0-based
+      const src = `./${imgNum}.jpg`;
       cardImg.src = src;
-      cardImg.alt = `カード${n}`;
+      cardImg.alt = `カード${imgNum}`;
     }
 
     function setAllButtonsEnabled(on){
@@ -281,7 +291,7 @@
       btn4.disabled = !(audioStep === 3);
     }
 
-    /* ---------- Lesson audio: one-at-a-time, starts after SFX ---------- */
+    /* ---------- Lesson audio: one-at-a-time ---------- */
     function playLesson(step){
       // stop any currently playing lesson audio
       if (currentLessonEl){
@@ -289,7 +299,7 @@
         currentLessonEl = null;
       }
       const L = letters[activeIndex];
-      const name = L.repeat(step);
+      const name = L.repeat(step); // A, AA, AAA, AAAA (or B..)
       const files = { m4a: `assets/audio/${name}.m4a`, mp3: `assets/audio/${name}.mp3` };
       const el = new Audio();
       currentLessonEl = el;
@@ -314,39 +324,39 @@
       setTimeout(()=>el.classList.remove("pressed"), 150);
     }
 
-    /* ---------- Button handlers: SFX first, then lesson ---------- */
+    /* ---------- Button handlers: SFX -> 0.5s delay -> Lesson ---------- */
     btn1.onclick = async () => {
       flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
       setCard(1);
-      await playUISound("1");
+      await playUISoundThenDelay("1");
       playLesson(1);
       if(audioStep===0){ audioStep=1; setButtonStates(); }
     };
     btn2.onclick = async () => {
       flashPressed(btn2);
-      if(doneSet.has(letters[activeIndex])){ setCard(2); await playUISound("2"); playLesson(2); return; }
+      if(doneSet.has(letters[activeIndex])){ setCard(2); await playUISoundThenDelay("2"); playLesson(2); return; }
       if(audioStep!==1) return;
       setCard(2);
-      await playUISound("2");
+      await playUISoundThenDelay("2");
       playLesson(2);
       audioStep=2; setButtonStates();
     };
     btn3.onclick = async () => {
       flashPressed(btn3);
-      if(doneSet.has(letters[activeIndex])){ setCard(3); await playUISound("3"); playLesson(3); return; }
+      if(doneSet.has(letters[activeIndex])){ setCard(3); await playUISoundThenDelay("3"); playLesson(3); return; }
       if(audioStep!==2) return;
       setCard(3);
-      await playUISound("3");
+      await playUISoundThenDelay("3");
       playLesson(3);
       audioStep=3; setButtonStates();
     };
     btn4.onclick = async () => {
       flashPressed(btn4);
-      if(doneSet.has(letters[activeIndex])){ setCard(4); await playUISound("4"); playLesson(4); return; }
+      if(doneSet.has(letters[activeIndex])){ setCard(4); await playUISoundThenDelay("4"); playLesson(4); return; }
       if(audioStep!==3) return;
       setCard(4);
-      await playUISound("4");
+      await playUISoundThenDelay("4");
       playLesson(4);
       audioStep=4; setButtonStates();
       finishBtn.style.display = "inline-block";
@@ -354,7 +364,7 @@
 
     finishBtn.onclick = async () => {
       flashPressed(finishBtn);
-      await playUISound("finish");
+      await playUISoundThenDelay("finish");
       const L = letters[activeIndex];
       if (!doneSet.has(L)){
         startConfetti(5000);
