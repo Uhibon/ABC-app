@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ブーハABC</title>
+  <title>ブーハABC (A+B test)</title>
   <style>
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
@@ -106,8 +106,8 @@
   <div class="dev-tools">
     <button id="devReset">リセット</button>
     <button id="devUnlock">全解放</button>
-    <button id="devNext">Next ▶</button>
     <button id="devPrev">◀ Prev</button>
+    <button id="devNext">Next ▶</button>
   </div>
 
   <canvas id="confetti"></canvas>
@@ -116,7 +116,10 @@
     const MS_DAY = 24*60*60*1000;
     const LS_KEY_START = "abc_start_ts";
     const LS_KEY_DONE  = "abc_done_letters";
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+    // LIMIT TO A & B ONLY
+    const letters = ["A","B"];
+    const TOTAL_LETTERS = letters.length; // 2
 
     // --- DOM
     const hello = document.getElementById("hello");
@@ -137,13 +140,9 @@
     // --- State
     let startTs = localStorage.getItem(LS_KEY_START)?Number(localStorage.getItem(LS_KEY_START)):null;
     let doneSet = loadDoneSet();
-    let activeIndex = 0;   // 0=A, 1=B ...
+    let activeIndex = 0;   // 0=A, 1=B
     let audioStep = 0;     // 0→1→2→3→4
     let confettiRunning = false;
-
-    // testing override: when true, devNext/devPrev control the letter and we DON'T
-    // recalc from start date.
-    let devOverride = false;
 
     // --- SFX (shared Audio) + per-button files
     const sfxEl = new Audio();
@@ -155,11 +154,11 @@
       "finish": { m4a: "assets/sfx/click4.m4a", mp3: "assets/sfx/click4.mp3" }
     };
 
-    // Plays SFX, waits for end, then waits 0.3s (no overlap with lesson).
+    // SFX then short delay (120ms) after it ends; safety cap if no 'ended'.
     function playUISoundThenDelay(key){
       return new Promise((resolve)=>{
         const files = clickSounds[key];
-        if(!files){ setTimeout(resolve,300); return; }
+        if(!files){ setTimeout(resolve,120); return; }
         try{sfxEl.pause();}catch(e){}
         sfxEl.currentTime = 0;
 
@@ -168,12 +167,12 @@
         const order = canMp4 ? [files.m4a+bust, files.mp3+bust] : [files.mp3+bust, files.m4a+bust];
         let i = 0;
 
-        function doneAfterDelay(){ setTimeout(resolve, 300); } // 0.3s
+        function doneAfterDelay(){ setTimeout(resolve, 120); } // 0.12s after SFX end
         function tryPlay(){
           if(i>=order.length){ doneAfterDelay(); return; }
           sfxEl.src = order[i++];
           sfxEl.currentTime = 0;
-          const cap = setTimeout(doneAfterDelay, 1200);
+          const cap = setTimeout(doneAfterDelay, 900); // short cap for click sounds
           sfxEl.onended = () => { clearTimeout(cap); doneAfterDelay(); };
           const p = sfxEl.play();
           if(p && typeof p.catch === "function") p.catch(()=>{ tryPlay(); });
@@ -187,7 +186,6 @@
     startBtn.onclick = () => {
       if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
       hello.style.display = "none";
-      devOverride = false;           // normal mode
       renderForActiveIndex(calcActiveIndexFromUnlock());
     };
 
@@ -198,16 +196,16 @@
     }
     function saveDoneSet(){ localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); }
 
-    // Unlock & time
+    // Unlock & time (clamped to 2 letters)
     function getUnlockedCount(){
       if(!startTs) return 0;
       const days = Math.floor((Date.now() - startTs) / MS_DAY);
-      return Math.min(26, Math.max(1, days + 1));
+      return Math.min(TOTAL_LETTERS, Math.max(1, days + 1));
     }
     function nextUnlockMs(){
       if(!startTs) return null;
       const unlocked = getUnlockedCount();
-      if(unlocked>=26) return 0;
+      if(unlocked >= TOTAL_LETTERS) return 0;
       return (startTs + unlocked*MS_DAY) - Date.now();
     }
     function fmt(ms){ if(ms==null) return "—:—:—";
@@ -215,16 +213,12 @@
             m=String(Math.floor((s%3600)/60)).padStart(2,"0"), ss=String(s%60).padStart(2,"0");
       return `${h}:${m}:${ss}`;
     }
+    function calcActiveIndexFromUnlock(){ return getUnlockedCount() - 1; }
 
-    function calcActiveIndexFromUnlock(){ return getUnlockedCount() ? getUnlockedCount()-1 : 0; }
-
-    // --- Rendering (does NOT change start date or unlocks)
+    // --- Rendering (per activeIndex)
     function renderForActiveIndex(newIndex){
-      activeIndex = Math.max(0, Math.min(letters.length-1, newIndex));
-      // progress bar reflects this letter (for testing it’s fine)
-      barFill.style.width = ((activeIndex+1)/26*100) + "%";
-
-      // default to step 1 image for the letter
+      activeIndex = Math.max(0, Math.min(TOTAL_LETTERS-1, newIndex)); // 0..1
+      barFill.style.width = ((activeIndex+1)/TOTAL_LETTERS*100) + "%";
       setCard(1);
 
       const L = letters[activeIndex];
@@ -239,12 +233,10 @@
       }
     }
 
-    // Mapping: A=1–4, B=5–8, C=9–12, ...
+    // Mapping: A=1–4, B=5–8
     function setCard(step){
-      const imgNum = activeIndex*4 + step;
-      const src = `./${imgNum}.jpg`;
-      // set then force repaint to avoid rare race on fast taps
-      cardImg.src = src;
+      const imgNum = activeIndex*4 + step; // 1..8
+      cardImg.src = `./${imgNum}.jpg`;
       cardImg.alt = `カード${imgNum}`;
     }
 
@@ -280,7 +272,7 @@
 
     function flashPressed(el){ el.classList.add("pressed"); setTimeout(()=>el.classList.remove("pressed"),150); }
 
-    // --- Button handlers: SFX → 0.3s → Lesson
+    // --- Button handlers: SFX → ~0.12s → Lesson
     btn1.onclick = async () => {
       flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
@@ -323,7 +315,7 @@
       await playUISoundThenDelay("finish");
       const L = letters[activeIndex];
       if (!doneSet.has(L)){
-        startConfetti(5000);
+        startConfetti(4000);
         doneSet.add(L);
         saveDoneSet();
       }
@@ -331,10 +323,10 @@
       finishBtn.style.display = "none";
     };
 
-    // Countdown
+    // Countdown (clamped for 2-letter test deck)
     function tickCountdown(){
       const ms = nextUnlockMs();
-      countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
+      countdown.textContent = ms === 0 ? "テスト: A+B 全解放" : fmt(ms);
     }
     setInterval(tickCountdown, 1000); tickCountdown();
 
@@ -352,10 +344,10 @@
       if(confettiRunning) return;
       confettiRunning = true;
       resize();
-      confetti = Array.from({length:320}).map(()=>({
+      confetti = Array.from({length:280}).map(()=>({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height - canvas.height,
-        r: Math.random()*8 + 3,
+        r: Math.random()*7 + 3,
         d: Math.random()*1 + 0.5,
         color: `hsl(${Math.random()*360},100%,50%)`
       }));
@@ -385,19 +377,13 @@
       location.reload();
     };
     devUnlock.onclick = () => {
-      const past = Date.now() - 30*MS_DAY; // unlock all
+      const past = Date.now() - 3*MS_DAY; // enough to unlock B
       localStorage.setItem(LS_KEY_START, String(past));
       localStorage.removeItem(LS_KEY_DONE);
       location.reload();
     };
-    devNext.onclick = () => {
-      devOverride = true;
-      renderForActiveIndex((activeIndex + 1) % letters.length);
-    };
-    devPrev.onclick = () => {
-      devOverride = true;
-      renderForActiveIndex((activeIndex - 1 + letters.length) % letters.length);
-    };
+    devNext.onclick = () => { renderForActiveIndex((activeIndex + 1) % TOTAL_LETTERS); };
+    devPrev.onclick = () => { renderForActiveIndex((activeIndex - 1 + TOTAL_LETTERS) % TOTAL_LETTERS); };
   </script>
 </body>
 </html>
