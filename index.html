@@ -365,38 +365,5 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
   </script>
-  <script>
-  (function(){
-    const files = [
-      "assets/sfx/click.m4a",
-      "assets/sfx/click1.m4a",
-      "assets/sfx/click2.m4a",
-      "assets/sfx/click3.m4a",
-      "assets/sfx/click4.m4a"
-    ];
-    const box = document.createElement('div');
-    box.style.cssText = 'position:fixed;left:8px;bottom:8px;background:#000;color:#0f0;padding:8px 10px;font:12px/1.3 ui-monospace,monospace;border-radius:8px;max-width:70vw;opacity:.9;z-index:9999;';
-    box.innerHTML = '<b>Audio asset check</b><br>';
-    document.body.appendChild(box);
-
-    Promise.all(files.map(url =>
-      fetch(url, { method:"HEAD", cache:"no-store" })
-        .then(r => ({ url, ok: r.ok, status: r.status }))
-        .catch(() => ({ url, ok:false, status:'ERR' }))
-    )).then(results => {
-      results.forEach(r => {
-        const line = document.createElement('div');
-        line.textContent = `${r.ok ? 'OK' : 'MISSING'}  ${r.status}  ${r.url}`;
-        line.style.color = r.ok ? '#9f9' : '#f66';
-        box.appendChild(line);
-      });
-      const hint = document.createElement('div');
-      hint.style.marginTop = '6px';
-      hint.style.color = '#ccc';
-      hint.textContent = 'Tip: path must be ABC-app/assets/sfx/… (case-sensitive).';
-      box.appendChild(hint);
-    });
-  })();
-</script>
 </body>
 </html>
