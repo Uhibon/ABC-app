@@ -146,8 +146,7 @@
     let confettiRunning = false;
     let doneSet = loadDoneSet();
 
-    /* ---------- UI click sounds with fallback ---------- */
-    // Map each UI key to both .m4a and .mp3 variants.
+    /* ---------- UI click sounds with cache-busting + fallback ---------- */
     const clickSounds = {
       "1": { m4a: "assets/sfx/click.m4a",  mp3: "assets/sfx/click.mp3" },
       "2": { m4a: "assets/sfx/click1.m4a", mp3: "assets/sfx/click1.mp3" },
@@ -161,9 +160,9 @@
       if (!files) return;
 
       const el = new Audio();
-      // Prefer a format the browser claims it can play; still fall back on error (404 etc.)
-      const prefersMp4 = !!el.canPlayType && el.canPlayType("audio/mp4"); // m4a container
-      const order = prefersMp4 ? [files.m4a, files.mp3] : [files.mp3, files.m4a];
+      const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
+      const bust = `?v=${Date.now().toString().slice(-6)}`;
+      const order = canMp4 ? [files.m4a + bust, files.mp3 + bust] : [files.mp3 + bust, files.m4a + bust];
       let i = 0;
 
       function tryPlay(){
@@ -171,9 +170,7 @@
         el.src = order[i++];
         el.currentTime = 0;
         const p = el.play();
-        if (p && typeof p.catch === "function") {
-          p.catch(() => { tryPlay(); });
-        }
+        if (p && typeof p.catch === "function") p.catch(()=>{ tryPlay(); });
       }
       el.onerror = () => { tryPlay(); };
       tryPlay();
@@ -254,15 +251,15 @@
       btn4.disabled = !(audioStep === 3);
     }
 
-    /* ---------- Lesson audio (A..A, A....AAAAA) ---------- */
-    // Keeps your original behavior; add mp3 fallback as well.
+    /* ---------- Lesson audio ---------- */
     function playAudioFor(step){
       const L = letters[activeIndex];
       const name = L.repeat(step);
       const files = { m4a: `assets/audio/${name}.m4a`, mp3: `assets/audio/${name}.mp3` };
       const el = new Audio();
-      const prefersMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
-      const order = prefersMp4 ? [files.m4a, files.mp3] : [files.mp3, files.m4a];
+      const canMp4 = !!el.canPlayType && el.canPlayType("audio/mp4");
+      const bust = `?v=${Date.now().toString().slice(-6)}`;
+      const order = canMp4 ? [files.m4a+bust, files.mp3+bust] : [files.mp3+bust, files.m4a+bust];
       let i = 0;
       function tryPlay(){
         if(i>=order.length) return;
@@ -280,7 +277,7 @@
       setTimeout(()=>el.classList.remove("pressed"), 150);
     }
 
-    /* ---------- Button handlers with per-button sounds ---------- */
+    /* ---------- Button handlers ---------- */
     btn1.onclick = () => {
       playUISound("1"); flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
