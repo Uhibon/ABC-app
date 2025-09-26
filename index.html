@@ -20,13 +20,13 @@
     .wrap{min-height:100%;display:grid;place-items:center;padding:24px}
     .app{width:min(980px,100%); background:var(--panel); backdrop-filter:blur(6px); border-radius:24px; box-shadow:0 12px 40px rgba(0,0,0,.18); overflow:hidden}
 
-    header{position:relative; display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid rgba(0,0,0,.06); background:rgba(255,255,255,.7)}
+    header{position:relative; display:flex; align-items:center; gap:12px; padding:14px 18px 36px; border-bottom:1px solid rgba(0,0,0,.06); background:rgba(255,255,255,.7); overflow:visible}{
     header h1{font-size:18px; margin:0; letter-spacing:.02em}
     header .spacer{flex:1}
     header .pill{font-size:12px; padding:6px 10px; border-radius:999px; background:#eee}
 
     /* playful pink booha sticker */
-    .sticker{position:absolute; right:10px; bottom:4px; width:120px; height:auto; pointer-events:none; opacity:.95; width:120px; height:auto; pointer-events:none; opacity:.95}
+    .sticker{position:absolute; right:10px; bottom:-8px; width:130px; height:auto; pointer-events:none; opacity:.95}
 
     .screen{display:none; padding:20px}
     .screen.active{display:block}
@@ -79,7 +79,7 @@
     <div class="app">
       <header>
         <img class="ghost" src="booha-ghost.png" alt="booha" onerror="this.style.display='none'"/>
-        <h1>Booha ABC <span class="badge">A / D 版</span></h1>
+        <h1>Booha ABC</h1>
         <div class="spacer"></div>
         <div class="pill" id="statusPill">未開始</div>
         <img class="sticker" src="playful-pink-booha.png" alt="booha sticker" onerror="this.style.display='none'"/>
@@ -96,8 +96,8 @@
         <div class="hero">
           <h2>スタートしよう！</h2>
           <p>きょうは <strong>A</strong> から。1にち1もじ、ゲームみたいにたのしくおぼえよう！</p>
-          <button class="btn" id="startBtn">スタート</button>
-          <p class="badge">※ いまは A〜D があそべるよ（テストよう）</p>
+          <button class="btn" id="startBtn" type="button" style="z-index:2">スタート</button>
+          
         </div>
       </section>
 
