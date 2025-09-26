@@ -26,7 +26,7 @@
     header .pill{font-size:12px; padding:6px 10px; border-radius:999px; background:#eee}
 
     /* playful pink booha sticker */
-    .sticker{position:absolute; right:10px; bottom:-18px; width:120px; height:auto; pointer-events:none; opacity:.95}
+    .sticker{position:absolute; right:10px; bottom:4px; width:120px; height:auto; pointer-events:none; opacity:.95; width:120px; height:auto; pointer-events:none; opacity:.95}
 
     .screen{display:none; padding:20px}
     .screen.active{display:block}
@@ -34,13 +34,13 @@
     .hero{display:grid; gap:14px; text-align:center}
     .hero h2{font-size:28px; margin:0}
     .hero p{margin:0; color:var(--muted)}
-    .btn{appearance:none; border:0; border-radius:14px; padding:14px 18px; background:var(--accent); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 10px 22px rgba(124,58,237,.25)}
+    .btn{appearance:none;border:0;border-radius:14px;padding:14px 18px;background:#ff4da6; color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(255,77,166,.25); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 10px 22px rgba(124,58,237,.25)}
     .btn:disabled{opacity:.5; cursor:not-allowed}
 
     .stage{display:grid; grid-template-columns:1fr 330px; gap:18px}
     @media (max-width:900px){ .stage{grid-template-columns:1fr} }
 
-    .cardArea{position:relative; min-height:380px; background:linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.6)); border:2px dashed #e5e7eb; border-radius:16px; display:grid; place-items:center; overflow:hidden}
+    .cardArea{position:relative; min-height:380px; background:transparent; border:none; border-radius:16px; display:grid; place-items:center; overflow:hidden}
     .cardArea img{width:100%; height:100%; object-fit:contain}
     .cardMeta{position:absolute; right:12px; bottom:12px; background:#0009; color:#fff; padding:6px 10px; border-radius:10px; font-size:12px}
     .confetti{position:absolute; inset:0; pointer-events:none}
@@ -84,6 +84,12 @@
         <div class="pill" id="statusPill">未開始</div>
         <img class="sticker" src="playful-pink-booha.png" alt="booha sticker" onerror="this.style.display='none'"/>
       </header>
+      <div class="topProgress" style="padding:10px 18px; background:rgba(255,255,255,.6); border-bottom:1px solid rgba(0,0,0,.06)">
+        <div class="badge" id="letterBadge">現在：A（ロック解除）｜次：B（ロック中）</div>
+        <div class="progress" aria-label="progress" style="margin-top:6px; background:#ffd1e6">
+          <div class="bar" id="bar" style="background:#ff4da6"></div>
+        </div>
+      </div>
 
       <!-- START -->
       <section id="start" class="screen active">
@@ -107,21 +113,19 @@
           <div class="controls">
             <div class="row">
               <button class="numBtn" data-idx="0"><span>1</span><span class="jp">カード1</span></button>
-              <button class="numBtn" data-idx="1"><span>2</span><span class="jp">カード2</span></button>
-              <button class="numBtn" data-idx="2"><span>3</span><span class="jp">カード3</span></button>
-              <button class="numBtn" data-idx="3"><span>4</span><span class="jp">カード4</span></button>
+              <button class="numBtn" data-idx="1" disabled><span>2</span><span class="jp">カード2</span></button>
+              <button class="numBtn" data-idx="2" disabled><span>3</span><span class="jp">カード3</span></button>
+              <button class="numBtn" data-idx="3" disabled><span>4</span><span class="jp">カード4</span></button>
             </div>
-            <div class="row sys">
-              <button class="btn ctl" id="prevBtn">← まえ</button>
-              <button class="btn ctl" id="nextBtn">つぎ →</button>
-            </div>
-            <div class="row sys">
+            <div class="row sys" id="finishRow" style="display:none">
               <button class="btn ctl ghostBtn" id="finishBtn">おわった！（ごうかく）</button>
-              <button class="btn ctl reset" id="resetBtn">リセット（テスト用）</button>
             </div>
-            <div>
-              <div class="badge" id="letterBadge">現在：A（ロック解除）｜次：B（ロック中）</div>
-              <div class="progress" aria-label="progress"><div class="bar" id="bar"></div></div>
+          </div>
+          <div class="footerControls" style="display:flex; gap:10px; justify-content:center; margin-top:20px">
+            <button class="tinyBtn" id="prevBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">← まえ</button>
+            <button class="tinyBtn" id="nextBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">つぎ →</button>
+            <button class="tinyBtn" id="resetBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">リセット</button>
+          </div></div>
             </div>
           </div>
         </div>
@@ -155,7 +159,7 @@
     sfxClick:$('#sfxClick'), sfxMagic:$('#sfxMagic')
   };
 
-  const state = { li:0, ci:0, doneThisLetter:false };
+  const state = { li:0, ci:0, doneThisLetter:false, seqIndex:0 };
 
   // Utils
   function $(q){return document.querySelector(q)}
@@ -180,6 +184,16 @@
   function updateUI(){
     els.cardImg.src = imgSrc();
     els.cardMeta.textContent = `${current().key} - ${state.ci+1} / 4`;
+    els.statusPill.textContent = `${current().key} 学習中`;
+    els.bar.style.width = `${(state.seqIndex/4)*100}%`;
+    els.letterBadge.textContent = `現在：${current().key}（${current().unlocked?'ロック解除':'ロック中'}）｜次：${ nextLetterLabel() }`;
+    els.numBtns.forEach((b,i)=>{
+      b.classList.toggle('active', i===state.ci);
+      b.disabled = i>state.seqIndex; // only next-in-order is enabled
+    });
+    const row = document.getElementById('finishRow');
+    if(row) row.style.display = (state.seqIndex>=4 ? 'block' : 'none');
+  } - ${state.ci+1} / 4`;
     els.statusPill.textContent = `${current().key} 学習中`;
     els.bar.style.width = `${((state.ci+1)/4)*100}%`;
     els.letterBadge.textContent = `現在：${current().key}（${current().unlocked?'ロック解除':'ロック中'}）｜次：${ nextLetterLabel() }`;
@@ -216,16 +230,28 @@
   // Number buttons: audio only
   els.numBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const idx = +btn.dataset.idx; state.ci = idx; btn.classList.add('active');
-      playLetter(idx>3?3:idx); updateUI();
+      const idx = +btn.dataset.idx;
+      if(idx !== state.seqIndex) { toast('じゅんばんに おしてね'); return; }
+      state.ci = idx;
+      btn.classList.add('active');
+      playLetter(idx>3?3:idx);
+      state.seqIndex = Math.min(4, state.seqIndex + 1);
+      updateUI();
     });
+  });
   });
 
   els.prevBtn.addEventListener('click', ()=>{ state.ci = (state.ci+3)%4; updateUI(); });
   els.nextBtn.addEventListener('click', ()=>{ state.ci = (state.ci+1)%4; updateUI(); });
 
-  els.finishBtn.addEventListener('click', ()=>{
+  els.finishBtn && els.finishBtn.addEventListener('click', ()=>{
     playClick();
+    if(state.seqIndex<4){ toast('まず 1→2→3→4 のじゅんで！'); return; }
+    if(state.doneThisLetter){ toast('この文字は復習モードです'); return; }
+    state.doneThisLetter = true; confettiBurst(); toast(`${current().key} クリア！`);
+    const nxt = cfg.letters[state.li+1]; if(nxt){ nxt.unlocked = true; save(); }
+    updateUI();
+  });
     if(state.doneThisLetter){ toast('この文字は復習モードです'); return; }
     state.doneThisLetter = true; confettiBurst(); toast(`${current().key} クリア！`);
     const nxt = cfg.letters[state.li+1]; if(nxt){ nxt.unlocked = true; save(); }
