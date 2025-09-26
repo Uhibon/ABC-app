@@ -3,282 +3,340 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Booha ABC アプリ – A〜D（復元）</title>
-  <link rel="icon" href="booha-ghost.png">
+  <title>ブーハABC</title>
   <style>
-    :root{
-      --ink:#1d1d1f; --muted:#5b5b64; --accent:#7c3aed; --ok:#22c55e; --danger:#ef4444; --panel:rgba(255,255,255,.92);
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+
+    /* Background stretched */
+    .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
+    .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
+
+    /* Hello / Start */
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
+    .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.2);overflow:visible}
+    .hello-card img{display:block;width:140px;height:auto;object-fit:contain;margin:0 auto}
+    .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
+    .hello-card p{margin:4px 0;font-size:13px;color:#444}
+    .hello-card button{
+      margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;
+      background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;
+      box-shadow:0 10px 18px rgba(255,77,166,.28)
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; color:var(--ink);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;
-      background-image:url('booha-background.jpg');
-      background-repeat:no-repeat; background-position:center; background-size:cover; background-attachment:fixed;
+    .hello-card button:active{transform:scale(.98)}
+
+    /* Top bar (cute) */
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+    .progress{flex:1;margin-right:12px}
+    .bar{height:12px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
+    .bar>i{display:block;height:100%;background:#ff4da6;width:0%;transition:width .35s ease}
+
+    .countdown{font-size:14px;color:#333}
+
+    /* Letter screen with card */
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;text-align:center;gap:16px}
+
+    /* Show only the full card image — no white background */
+    .card-wrap{
+      display:grid;place-items:center;
+      width:min(900px, 96vw);
+      min-height:40vh;
+      background:transparent;border:0;padding:0;box-shadow:none;
     }
-    .wrap{min-height:100%;display:grid;place-items:center;padding:24px}
-    .app{width:min(980px,100%); background:var(--panel); backdrop-filter:blur(6px); border-radius:24px; box-shadow:0 12px 40px rgba(0,0,0,.18); overflow:hidden}
+    .card-wrap img{
+      max-width:100%;
+      max-height:70vh;
+      width:auto;height:auto;
+      object-fit:contain;
+      border-radius:12px;
+    }
 
-    header{position:relative; display:flex; align-items:center; gap:12px; padding:14px 18px 36px; border-bottom:1px solid rgba(0,0,0,.06); background:rgba(255,255,255,.7); overflow:visible}{
-    header h1{font-size:18px; margin:0; letter-spacing:.02em}
-    header .spacer{flex:1}
-    header .pill{font-size:12px; padding:6px 10px; border-radius:999px; background:#eee}
+    /* Play buttons */
+    .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px, 92vw)}
+    .btn-audio{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      border:0;border-radius:18px;padding:16px 18px;
+      font-size:18px;font-weight:900;color:#fff;cursor:pointer;
+      box-shadow:0 10px 18px rgba(0,0,0,.20);
+      transition: transform 0.15s ease, background-color .12s ease;
+    }
+    .btn-audio:active{transform:scale(0.92)}
+    .btn-audio.pressed{background:#7c5cff !important; color:#fff}
+    .btn-audio .num{font-size:26px;line-height:1}
+    .btn-audio small{font-weight:700;font-size:12px;opacity:.95}
+    .btn1{background:#ff5959}
+    .btn2{background:#06b6d4}
+    .btn3{background:#ffd166;color:#111}
+    .btn4{background:#7c5cff}
+    .btn-audio[disabled]{opacity:.65;cursor:default}
 
-    /* playful pink booha sticker */
-    .sticker{position:absolute; right:10px; bottom:-8px; width:130px; height:auto; pointer-events:none; opacity:.95}
+    .btn-finish{
+      margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;
+      font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;
+      box-shadow:0 10px 18px rgba(0,0,0,.18);
+      transition: transform 0.15s ease, background-color .12s ease;
+    }
+    .btn-finish:active{transform:scale(0.92)}
+    .btn-finish.pressed{background:#7c5cff}
 
-    .screen{display:none; padding:20px}
-    .screen.active{display:block}
-
-    .hero{display:grid; gap:14px; text-align:center}
-    .hero h2{font-size:28px; margin:0}
-    .hero p{margin:0; color:var(--muted)}
-    .btn{appearance:none;border:0;border-radius:14px;padding:14px 18px;background:#ff4da6; color:#fff;font-weight:800;cursor:pointer;box-shadow:0 10px 22px rgba(255,77,166,.25); color:#fff; font-weight:800; cursor:pointer; box-shadow:0 10px 22px rgba(124,58,237,.25)}
-    .btn:disabled{opacity:.5; cursor:not-allowed}
-
-    .stage{display:grid; grid-template-columns:1fr 330px; gap:18px}
-    @media (max-width:900px){ .stage{grid-template-columns:1fr} }
-
-    .cardArea{position:relative; min-height:380px; background:transparent; border:none; border-radius:16px; display:grid; place-items:center; overflow:hidden}
-    .cardArea img{width:100%; height:100%; object-fit:contain}
-    .cardMeta{position:absolute; right:12px; bottom:12px; background:#0009; color:#fff; padding:6px 10px; border-radius:10px; font-size:12px}
-    .confetti{position:absolute; inset:0; pointer-events:none}
-
-    .controls{display:grid; gap:10px}
-    .row{display:flex; gap:10px; flex-wrap:wrap}
-    .ctl{flex:1; min-width:120px}
-
-    /* solid buttons (not transparent) */
-    .numBtn{flex:1; min-width:72px; appearance:none; border:2px solid #e5e7eb; background:#fff; border-radius:14px; padding:12px 10px; font-size:18px; font-weight:900; cursor:pointer; transition:transform .05s, box-shadow .15s, background .15s}
-    .numBtn .jp{display:block; font-size:12px; color:var(--muted); font-weight:700}
-    .numBtn:active{transform:translateY(1px)}
-    .numBtn.active{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px rgba(124,58,237,.25); background:#f5f3ff}
-    /* bright purple highlight when pressed */
-    .numBtn:focus-visible{box-shadow:0 0 0 3px rgba(124,58,237,.5)}
-
-    .sys .btn{background:#111}
-    .sys .ghostBtn{background:#10b981}
-    .sys .reset{background:var(--danger)}
-
-    .progress{height:8px; background:#eee; border-radius:999px; overflow:hidden}
-    .bar{height:100%; width:0; background:var(--ok); transition:width .3s}
-
-    .badge{font-size:12px; color:var(--muted)}
-
-    .toast{position:fixed; left:16px; right:16px; bottom:16px; display:none}
-    .toast.show{display:block}
-    .toast .bubble{background:#111; color:#fff; padding:12px 14px; border-radius:12px; display:inline-block}
-
-    .dot{position:absolute; width:10px; height:10px; border-radius:50%; animation:pop 800ms ease-out forwards}
-    @keyframes pop{0%{transform:translate(var(--x,0),var(--y,0)) scale(.6); opacity:1}100%{transform:translate(calc(var(--x,0)*8),calc(var(--y,0)*8)) scale(1.2); opacity:0}}
+    canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="app">
-      <header>
-        <img class="ghost" src="booha-ghost.png" alt="booha" onerror="this.style.display='none'"/>
-        <h1>Booha ABC</h1>
-        <div class="spacer"></div>
-        <div class="pill" id="statusPill">未開始</div>
-        <img class="sticker" src="playful-pink-booha.png" alt="booha sticker" onerror="this.style.display='none'"/>
-      </header>
-      <div class="topProgress" style="padding:10px 18px; background:rgba(255,255,255,.6); border-bottom:1px solid rgba(0,0,0,.06)">
-        <div class="badge" id="letterBadge">現在：A（ロック解除）｜次：B（ロック中）</div>
-        <div class="progress" aria-label="progress" style="margin-top:6px; background:#ffd1e6">
-          <div class="bar" id="bar" style="background:#ff4da6"></div>
-        </div>
-      </div>
+  <div class="bg"></div>
+  <div class="overlay"></div>
 
-      <!-- START -->
-      <section id="start" class="screen active">
-        <div class="hero">
-          <h2>スタートしよう！</h2>
-          <p>きょうは <strong>A</strong> から。1にち1もじ、ゲームみたいにたのしくおぼえよう！</p>
-          <button class="btn" id="startBtn" type="button" style="z-index:2">スタート</button>
-          
-        </div>
-      </section>
-
-      <!-- MAIN -->
-      <section id="main" class="screen">
-        <div class="stage">
-          <div class="cardArea" id="cardArea">
-            <img id="cardImg" alt="カード"/>
-            <div class="cardMeta" id="cardMeta">A - 1 / 4</div>
-            <div class="confetti" id="confetti"></div>
-          </div>
-
-          <div class="controls">
-            <div class="row">
-              <button class="numBtn" data-idx="0"><span>1</span><span class="jp">カード1</span></button>
-              <button class="numBtn" data-idx="1" disabled><span>2</span><span class="jp">カード2</span></button>
-              <button class="numBtn" data-idx="2" disabled><span>3</span><span class="jp">カード3</span></button>
-              <button class="numBtn" data-idx="3" disabled><span>4</span><span class="jp">カード4</span></button>
-            </div>
-            <div class="row sys" id="finishRow" style="display:none">
-              <button class="btn ctl ghostBtn" id="finishBtn">おわった！（ごうかく）</button>
-            </div>
-          </div>
-          <div class="footerControls" style="display:flex; gap:10px; justify-content:center; margin-top:20px">
-            <button class="tinyBtn" id="prevBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">← まえ</button>
-            <button class="tinyBtn" id="nextBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">つぎ →</button>
-            <button class="tinyBtn" id="resetBtn" style="background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px">リセット</button>
-          </div></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div class="toast" id="toast"><div class="bubble" id="toastMsg"></div></div>
+  <!-- Hello -->
+  <div id="hello" class="hello">
+    <div class="hello-card">
+      <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
+      <h1>こんにちは！</h1>
+      <p>スタートすると、毎日１つの文字が解放されます。</p>
+      <p>進捗を守るため、同じ端末をご使用ください。</p>
+      <button id="startBtn" type="button">スタート</button>
     </div>
   </div>
 
-  <audio id="sfxClick" preload="auto" src="assets/sfx/click.mp3"></audio>
-  <audio id="sfxMagic" preload="auto" src="assets/sfx/magic.mp3"></audio>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
+    <div id="countdown" class="countdown">—:—:—</div>
+  </div>
+
+  <!-- Letter of the day -->
+  <div class="letter-screen">
+    <div class="card-wrap">
+      <img id="cardImg" src="./1.jpg" alt="カード1" />
+    </div>
+
+    <div class="buttons">
+      <button id="btn1" class="btn-audio btn1">
+        <span class="num">①</span><small>リピート</small>
+      </button>
+      <button id="btn2" class="btn-audio btn2">
+        <span class="num">②</span><small>いっしょに読む</small>
+      </button>
+      <button id="btn3" class="btn-audio btn3">
+        <span class="num">③</span><small>リピート</small>
+      </button>
+      <button id="btn4" class="btn-audio btn4">
+        <span class="num">④</span><small>スペシャル！</small>
+      </button>
+    </div>
+
+    <button id="finishBtn" class="btn-finish">できた！</button>
+  </div>
+
+  <canvas id="confetti"></canvas>
+  <!-- SFX: only finish uses click; confetti uses magic -->
+  <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
+  <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
   <script>
-  const cfg = {
-    letters: [
-      { key:'A', unlocked:true,  imgIdx:[1,2,3,4],   audio:['A.m4a','AA.m4a','AAA.m4a','AAAA.m4a','AAAAA.m4a'] },
-      { key:'B', unlocked:false, imgIdx:[5,6,7,8],   audio:['B.m4a','BB.m4a','BBB.m4a','BBBB.m4a','BBBBB.m4a'] },
-      { key:'C', unlocked:false, imgIdx:[9,10,11,12],  audio:['C.m4a','CC.m4a','CCC.m4a','CCCC.m4a','CCCCC.m4a'] },
-      { key:'D', unlocked:false, imgIdx:[13,14,15,16], audio:['D.m4a','DD.m4a','DDD.m4a','DDDD.m4a','DDDDD.m4a'] }
-    ]
-  };
+    const MS_DAY = 24*60*60*1000;
+    const LS_KEY_START = "abc_start_ts";
+    const LS_KEY_DONE  = "abc_done_letters";
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-  const els = {
-    screens:{start:$('#start'), main:$('#main')},
-    startBtn:$('#startBtn'), statusPill:$('#statusPill'),
-    cardArea:$('#cardArea'), cardImg:$('#cardImg'), cardMeta:$('#cardMeta'), confetti:$('#confetti'),
-    numBtns:$$('.numBtn'), prevBtn:$('#prevBtn'), nextBtn:$('#nextBtn'),
-    finishBtn:$('#finishBtn'), resetBtn:$('#resetBtn'),
-    letterBadge:$('#letterBadge'), bar:$('#bar'),
-    toast:$('#toast'), toastMsg:$('#toastMsg'),
-    sfxClick:$('#sfxClick'), sfxMagic:$('#sfxMagic')
-  };
+    let startTs = localStorage.getItem(LS_KEY_START)?Number(localStorage.getItem(LS_KEY_START)):null;
 
-  const state = { li:0, ci:0, doneThisLetter:false, seqIndex:0 };
+    const hello = document.getElementById("hello");
+    const startBtn = document.getElementById("startBtn");
+    const barFill = document.getElementById("barFill");
+    const countdown = document.getElementById("countdown");
 
-  // Utils
-  function $(q){return document.querySelector(q)}
-  function $$(q){return Array.from(document.querySelectorAll(q))}
-  function show(id){ Object.values(els.screens).forEach(s=>s.classList.remove('active')); id.classList.add('active'); }
-  function toast(msg){ els.toastMsg.textContent = msg; els.toast.classList.add('show'); setTimeout(()=>els.toast.classList.remove('show'), 1800); }
-  function save(){ localStorage.setItem('abc_state', JSON.stringify({li:state.li, unlocked:cfg.letters.map(l=>l.unlocked)})) }
-  function load(){ try{ const d=JSON.parse(localStorage.getItem('abc_state')); if(!d) return; state.li=d.li??0; d.unlocked?.forEach((v,i)=>cfg.letters[i]&&(cfg.letters[i].unlocked=v)); }catch(e){} }
+    const cardImg = document.getElementById("cardImg");
+    const btn1 = document.getElementById("btn1");
+    const btn2 = document.getElementById("btn2");
+    const btn3 = document.getElementById("btn3");
+    const btn4 = document.getElementById("btn4");
+    const finishBtn = document.getElementById("finishBtn");
+    const clickAudio = document.getElementById("clickAudio");
+    const magicAudio = document.getElementById("magicAudio");
 
-  // Preload
-  function preload(){
-    const imgs = cfg.letters.flatMap(l=>l.imgIdx.map(n=>`assets/cards/${n}.jpg`));
-    imgs.forEach(src=>{ const im = new Image(); im.src = src; });
-    const aud = cfg.letters.flatMap(l=>l.audio);
-    aud.forEach(a=>{ const au = new Audio(); au.src = `assets/audio/${a}`; });
-  }
+    let activeIndex = 0;
+    let audioStep = 0;
+    let confettiRunning = false;
+    let doneSet = loadDoneSet();
 
-  function current(){ return cfg.letters[state.li]; }
-  function imgSrc(){ return `assets/cards/${ current().imgIdx[state.ci] }.jpg`; }
-  function nextLetterLabel(){ const n = cfg.letters[state.li+1]; return n? `${n.key}（${n.unlocked?'ロック解除':'ロック中'}）` : 'なし'; }
+    startBtn.onclick = () => {
+      if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
+      hello.style.display = "none";
+      showLetter();
+    };
 
-  function updateUI(){
-    els.cardImg.src = imgSrc();
-    els.cardMeta.textContent = `${current().key} - ${state.ci+1} / 4`;
-    els.statusPill.textContent = `${current().key} 学習中`;
-    els.bar.style.width = `${(state.seqIndex/4)*100}%`;
-    els.letterBadge.textContent = `現在：${current().key}（${current().unlocked?'ロック解除':'ロック中'}）｜次：${ nextLetterLabel() }`;
-    els.numBtns.forEach((b,i)=>{
-      b.classList.toggle('active', i===state.ci);
-      b.disabled = i>state.seqIndex; // only next-in-order is enabled
-    });
-    const row = document.getElementById('finishRow');
-    if(row) row.style.display = (state.seqIndex>=4 ? 'block' : 'none');
-  } - ${state.ci+1} / 4`;
-    els.statusPill.textContent = `${current().key} 学習中`;
-    els.bar.style.width = `${((state.ci+1)/4)*100}%`;
-    els.letterBadge.textContent = `現在：${current().key}（${current().unlocked?'ロック解除':'ロック中'}）｜次：${ nextLetterLabel() }`;
-    els.numBtns.forEach((b,i)=> b.classList.toggle('active', i===state.ci));
-  }
-
-  // Audio helpers
-  function playLetter(levelIdx=0){
-    const src = `assets/audio/${ current().audio[levelIdx] }`;
-    const au = new Audio(src);
-    au.play().catch(()=>{});
-  }
-  function playClick(){ try{ els.sfxClick.currentTime = 0; els.sfxClick.play().catch(()=>{}); }catch(e){} }
-  function playMagic(){ try{ els.sfxMagic.currentTime = 0; els.sfxMagic.play().catch(()=>{}); }catch(e){} }
-
-  function confettiBurst(){
-    playMagic();
-    const box = els.confetti.getBoundingClientRect();
-    for(let i=0;i<60;i++){
-      const d = document.createElement('div'); d.className='dot';
-      d.style.left = Math.random()*box.width + 'px';
-      d.style.top  = (box.height-10) + 'px';
-      d.style.background = `hsl(${Math.random()*360} 80% 60%)`;
-      d.style.setProperty('--x', (Math.random()*2-1).toFixed(2));
-      d.style.setProperty('--y', (-Math.random()*2-0.5).toFixed(2));
-      els.confetti.appendChild(d);
-      setTimeout(()=>d.remove(), 900);
+    function loadDoneSet(){
+      try {
+        const raw = localStorage.getItem(LS_KEY_DONE);
+        const arr = raw ? JSON.parse(raw) : [];
+        return new Set(arr);
+      } catch { return new Set(); }
     }
-  }
+    function saveDoneSet(){
+      localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet]));
+    }
 
-  // Events
-  els.startBtn.addEventListener('click', ()=>{ show(els.screens.main); toast('Aからスタート！'); updateUI(); });
+    function getUnlockedCount(){
+      if(!startTs) return 0;
+      const elapsed = Date.now() - startTs;
+      const days = Math.floor(elapsed / MS_DAY);
+      return Math.min(26, Math.max(1, days + 1));
+    }
+    function nextUnlockMs(){
+      if(!startTs) return null;
+      const unlocked = getUnlockedCount();
+      if(unlocked >= 26) return 0;
+      return (startTs + unlocked*MS_DAY) - Date.now();
+    }
+    function fmt(ms){
+      if(ms == null) return "—:—:—";
+      const s = Math.floor(ms/1000);
+      const h = String(Math.floor(s/3600)).padStart(2,"0");
+      const m = String(Math.floor((s%3600)/60)).padStart(2,"0");
+      const ss = String(s%60).padStart(2,"0");
+      return `${h}:${m}:${ss}`;
+    }
 
-  // Number buttons: audio only
-  els.numBtns.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const idx = +btn.dataset.idx;
-      if(idx !== state.seqIndex) { toast('じゅんばんに おしてね'); return; }
-      state.ci = idx;
-      btn.classList.add('active');
-      playLetter(idx>3?3:idx);
-      state.seqIndex = Math.min(4, state.seqIndex + 1);
-      updateUI();
-    });
-  });
-  });
+    function showLetter(){
+      const unlocked = getUnlockedCount();
+      activeIndex = unlocked - 1;
+      barFill.style.width = (unlocked/26*100) + "%";
 
-  els.prevBtn.addEventListener('click', ()=>{ state.ci = (state.ci+3)%4; updateUI(); });
-  els.nextBtn.addEventListener('click', ()=>{ state.ci = (state.ci+1)%4; updateUI(); });
+      setCard(1);
 
-  els.finishBtn && els.finishBtn.addEventListener('click', ()=>{
-    playClick();
-    if(state.seqIndex<4){ toast('まず 1→2→3→4 のじゅんで！'); return; }
-    if(state.doneThisLetter){ toast('この文字は復習モードです'); return; }
-    state.doneThisLetter = true; confettiBurst(); toast(`${current().key} クリア！`);
-    const nxt = cfg.letters[state.li+1]; if(nxt){ nxt.unlocked = true; save(); }
-    updateUI();
-  });
-    if(state.doneThisLetter){ toast('この文字は復習モードです'); return; }
-    state.doneThisLetter = true; confettiBurst(); toast(`${current().key} クリア！`);
-    const nxt = cfg.letters[state.li+1]; if(nxt){ nxt.unlocked = true; save(); }
-    updateUI();
-  });
+      const L = letters[activeIndex];
+      if (doneSet.has(L)){
+        audioStep = 4;
+        setAllButtonsEnabled(true);
+        finishBtn.style.display = "none";
+      } else {
+        audioStep = 0;
+        setButtonStates();
+        finishBtn.style.display = "none";
+      }
+    }
 
-  els.resetBtn.addEventListener('click', ()=>{
-    localStorage.removeItem('abc_state'); cfg.letters.forEach((l,i)=> l.unlocked = (i===0));
-    state.li=0; state.ci=0; state.doneThisLetter=false; updateUI(); toast('リセットしました');
-  });
+    function setCard(n){
+      const src = `./${n}.jpg`;
+      cardImg.src = src;
+      cardImg.alt = `カード${n}`;
+    }
 
-  // Keyboard
-  window.addEventListener('keydown', (e)=>{
-    if(e.key>='1'&&e.key<='4'){ els.numBtns[+e.key-1].click(); }
-    if(e.key==='ArrowLeft') els.prevBtn.click();
-    if(e.key==='ArrowRight') els.nextBtn.click();
-    if(e.key.toLowerCase()==='n') moveLetter(1);
-  });
-  function moveLetter(step){
-    const nl = state.li + step; if(nl<0) return;
-    const tgt = cfg.letters[nl]; if(!tgt){ toast('最後の文字です'); return; }
-    if(!tgt.unlocked){ toast(`${tgt.key} はロック中`); return; }
-    state.li = nl; state.ci=0; state.doneThisLetter=false; save(); updateUI();
-  }
+    function setAllButtonsEnabled(on){
+      [btn1,btn2,btn3,btn4].forEach(b => b.disabled = !on);
+    }
 
-  // Init
-  load(); preload(); updateUI();
+    function setButtonStates(){
+      btn1.disabled = !(audioStep === 0);
+      btn2.disabled = !(audioStep === 1);
+      btn3.disabled = !(audioStep === 2);
+      btn4.disabled = !(audioStep === 3);
+    }
+
+    function playAudioFor(step){
+      const L = letters[activeIndex];
+      const name = L.repeat(step);
+      const src = `assets/audio/${name}.m4a`;
+      const audio = new Audio(src);
+      audio.play().catch(()=>{});
+    }
+
+    // Only used for the Finish button now
+    function playClick(){
+      try { clickAudio.currentTime = 0; clickAudio.play().catch(()=>{}); } catch(e) {}
+    }
+
+    function flashPressed(el){
+      el.classList.add("pressed");
+      setTimeout(()=>el.classList.remove("pressed"), 150);
+    }
+
+    // Buttons 1–4: AUDIO ONLY (no SFX)
+    btn1.onclick = () => {
+      flashPressed(btn1);
+      if(audioStep>0 && audioStep<4) return;
+      setCard(1); playAudioFor(1);
+      if(audioStep===0){ audioStep=1; setButtonStates(); }
+    };
+    btn2.onclick = () => {
+      flashPressed(btn2);
+      if(doneSet.has(letters[activeIndex])){ setCard(2); playAudioFor(2); return; }
+      if(audioStep!==1) return;
+      setCard(2); playAudioFor(2);
+      audioStep=2; setButtonStates();
+    };
+    btn3.onclick = () => {
+      flashPressed(btn3);
+      if(doneSet.has(letters[activeIndex])){ setCard(3); playAudioFor(3); return; }
+      if(audioStep!==2) return;
+      setCard(3); playAudioFor(3);
+      audioStep=3; setButtonStates();
+    };
+    btn4.onclick = () => {
+      flashPressed(btn4);
+      if(doneSet.has(letters[activeIndex])){ setCard(4); playAudioFor(4); return; }
+      if(audioStep!==3) return;
+      setCard(4); playAudioFor(4);
+      audioStep=4; setButtonStates();
+      finishBtn.style.display = "inline-block";
+    };
+
+    // Finish: plays SFX + confetti magic
+    finishBtn.onclick = () => {
+      playClick(); flashPressed(finishBtn);
+      const L = letters[activeIndex];
+      if (!doneSet.has(L)){
+        startConfetti(5000);
+        doneSet.add(L);
+        saveDoneSet();
+      }
+      setAllButtonsEnabled(true);
+      finishBtn.style.display = "none";
+    };
+
+    function updateCountdown(){
+      const ms = nextUnlockMs();
+      countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
+    }
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    if(startTs){ hello.style.display="none"; showLetter(); }
+
+    /* ---------- Confetti ---------- */
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    let confetti = [];
+    function startConfetti(duration){
+      if(confettiRunning) return;
+      confettiRunning = true;
+      // play magic SFX with confetti
+      try { magicAudio.currentTime = 0; magicAudio.play().catch(()=>{}); } catch(e) {}
+      resize();
+      confetti = Array.from({length:320}).map(()=>({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height - canvas.height,
+        r: Math.random()*8 + 3,
+        d: Math.random()*1 + 0.5,
+        color: `hsl(${Math.random()*360},100%,50%)`
+      }));
+      const end = Date.now() + duration;
+      (function draw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        confetti.forEach(p=>{
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
+          ctx.fillStyle = p.color; ctx.fill();
+        });
+        confetti.forEach(p=>{
+          p.y += p.d*4;
+          if(p.y>canvas.height){ p.y = -10; p.x = Math.random()*canvas.width; }
+        });
+        if(Date.now() < end){ requestAnimationFrame(draw); }
+        else { confettiRunning = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+      })();
+    }
+    window.onresize = resize;
+    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+    resize();
   </script>
 </body>
 </html>
