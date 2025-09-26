@@ -13,7 +13,11 @@
 
     /* Hello / Start */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
-    .hello-card{background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;box-shadow:0 8px 20px rgba(0,0,0,.2);overflow:visible}
+    .hello-card{
+      position:relative; z-index:11;
+      background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);overflow:visible
+    }
     .hello-card img{display:block;width:140px;height:auto;object-fit:contain;margin:0 auto}
     .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
     .hello-card p{margin:4px 0;font-size:13px;color:#444}
@@ -34,7 +38,7 @@
     /* Letter screen with card */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;text-align:center;gap:16px}
 
-    /* Show only the full card image — no white background */
+    /* Only the full card image — no white background */
     .card-wrap{
       display:grid;place-items:center;
       width:min(900px, 96vw);
@@ -79,7 +83,7 @@
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* ===== TEMP TEST CONTROLS (bottom) ===== */
+    /* TEMP TEST CONTROLS (bottom) */
     .test-controls{
       position:fixed;left:0;right:0;bottom:8px;
       display:flex;gap:8px;justify-content:center;z-index:60;
@@ -96,7 +100,7 @@
   <div class="overlay"></div>
 
   <!-- Hello -->
-  <div id="hello" class="hello">
+  <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>こんにちは！</h1>
@@ -149,6 +153,13 @@
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
   <script>
+    // ---- safety net: never let one error freeze the page ----
+    (function trap(){
+      const og = console.error.bind(console);
+      window.addEventListener('error', e => { try{ og('JS error:', e.message); }catch{} }, {capture:true});
+      window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
+    })();
+
     const MS_DAY = 24*60*60*1000;
     const LS_KEY_START = "abc_start_ts";
     const LS_KEY_DONE  = "abc_done_letters";
@@ -174,18 +185,26 @@
     const devBack  = document.getElementById("devBack");
     const devNext  = document.getElementById("devNext");
     const devReset = document.getElementById("devReset");
-    let testIndex = 1; // 1..4 for visual cycling only
+    let testIndex = 1; // 1..4 fake-cycle
 
     let activeIndex = 0;
     let audioStep = 0;
     let confettiRunning = false;
     let doneSet = loadDoneSet();
 
-    startBtn.onclick = () => {
-      if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
+    function startApp(){
+      try {
+        if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
+      } catch(_) {}
       hello.style.display = "none";
       showLetter();
-    };
+    }
+
+    // Bind start in several safe ways (covers rare race/inline timing issues)
+    startBtn?.addEventListener('click', startApp);
+    document.addEventListener('DOMContentLoaded', ()=> startBtn?.addEventListener('click', startApp));
+    // Fallback: pressing Enter also starts
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && hello.style.display !== 'none') startApp(); });
 
     function loadDoneSet(){
       try {
@@ -195,7 +214,7 @@
       } catch { return new Set(); }
     }
     function saveDoneSet(){
-      localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet]));
+      try { localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); } catch {}
     }
 
     function getUnlockedCount(){
@@ -225,7 +244,7 @@
       barFill.style.width = (unlocked/26*100) + "%";
 
       setCard(1);
-      testIndex = 1; // reset visual cycle
+      testIndex = 1;
 
       const L = letters[activeIndex];
       if (doneSet.has(L)){
@@ -264,10 +283,8 @@
       audio.play().catch(()=>{});
     }
 
-    // Only used for the Finish button now
-    function playClick(){
-      try { clickAudio.currentTime = 0; clickAudio.play().catch(()=>{}); } catch(e) {}
-    }
+    // Only Finish uses click SFX
+    function playClick(){ try { clickAudio.currentTime = 0; clickAudio.play().catch(()=>{}); } catch(e) {} }
 
     function flashPressed(el){
       el.classList.add("pressed");
@@ -275,28 +292,24 @@
     }
 
     // Buttons 1–4: AUDIO ONLY (no SFX)
-    btn1.onclick = () => {
-      flashPressed(btn1);
+    btn1.onclick = () => { flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
       setCard(1); playAudioFor(1);
       if(audioStep===0){ audioStep=1; setButtonStates(); }
     };
-    btn2.onclick = () => {
-      flashPressed(btn2);
+    btn2.onclick = () => { flashPressed(btn2);
       if(doneSet.has(letters[activeIndex])){ setCard(2); playAudioFor(2); return; }
       if(audioStep!==1) return;
       setCard(2); playAudioFor(2);
       audioStep=2; setButtonStates();
     };
-    btn3.onclick = () => {
-      flashPressed(btn3);
+    btn3.onclick = () => { flashPressed(btn3);
       if(doneSet.has(letters[activeIndex])){ setCard(3); playAudioFor(3); return; }
       if(audioStep!==2) return;
       setCard(3); playAudioFor(3);
       audioStep=3; setButtonStates();
     };
-    btn4.onclick = () => {
-      flashPressed(btn4);
+    btn4.onclick = () => { flashPressed(btn4);
       if(doneSet.has(letters[activeIndex])){ setCard(4); playAudioFor(4); return; }
       if(audioStep!==3) return;
       setCard(4); playAudioFor(4);
@@ -330,11 +343,9 @@
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
     let confetti = [];
-    let confettiRunning = false;
     function startConfetti(duration){
       if(confettiRunning) return;
       confettiRunning = true;
-      // play magic SFX with confetti
       try { magicAudio.currentTime = 0; magicAudio.play().catch(()=>{}); } catch(e) {}
       resize();
       confetti = Array.from({length:320}).map(()=>({
@@ -365,19 +376,22 @@
 
     /* ===== TEMP BUTTON LOGIC ===== */
     devBack.onclick = ()=>{
-      testIndex = ((testIndex + 2) % 4) + 1; // 1..4 cycle backwards
+      testIndex = ((testIndex + 2) % 4) + 1;
       cardImg.src = `./${testIndex}.jpg`;
       cardImg.alt = `カード${testIndex}`;
     };
     devNext.onclick = ()=>{
-      testIndex = (testIndex % 4) + 1;       // 1..4 cycle forwards
+      testIndex = (testIndex % 4) + 1;
       cardImg.src = `./${testIndex}.jpg`;
       cardImg.alt = `カード${testIndex}`;
     };
     devReset.onclick = ()=>{
-      localStorage.removeItem(LS_KEY_START);
-      localStorage.removeItem(LS_KEY_DONE);
-      location.reload();
+      try {
+        localStorage.removeItem(LS_KEY_START);
+        localStorage.removeItem(LS_KEY_DONE);
+      } finally {
+        location.reload();
+      }
     };
   </script>
 </body>
