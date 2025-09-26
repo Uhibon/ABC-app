@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ABC アプリ – A/D 版</title>
+  <title>ABC アプリ – A/B 版</title>
   <link rel="icon" href="booha-ghost.png">
   <style>
-    :root{ --ink:#222; --muted:#555; --bg:#f7f7fb; --card:#fff; --accent:#7c3aed; --ok:#22c55e; --danger:#ef4444; }
+    :root{
+      --ink:#222; --muted:#555; --bg:#f7f7fb; --card:#fff; --accent:#7c3aed; --ok:#22c55e; --danger:#ef4444;
+    }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif;background:var(--bg);color:var(--ink);}
@@ -122,11 +124,11 @@
 
   <audio id="sfxClick" preload="auto" src="assets/sfx/click.mp3"></audio>
   <audio id="sfxMagic" preload="auto" src="assets/sfx/magic.mp3"></audio>
-  <!-- レター音声: A..AAAAA, B..BBBBB, C..CCCCC, D..DDDDD を assets/audio/ に配置 -->
+  <!-- レター音声（A/B）: A.m4a, AA.m4a, AAA.m4a, AAAA.m4a, AAAAA.m4a 同様に B… -->
 
   <script>
   const cfg = {
-    delayMs: 300, // いまは未使用（将来の調整用）
+    delayMs: 300, // SFX → レター音声の遅延
     letters: [
       {
         key:'A', unlocked:true,
@@ -149,7 +151,15 @@
         imgIdx:[13,14,15,16],
         audio:['D.m4a','DD.m4a','DDD.m4a','DDDD.m4a','DDDDD.m4a']
       }
-      // ここに E〜Z を追加予定
+    ],
+        audio:['A.m4a','AA.m4a','AAA.m4a','AAAA.m4a','AAAAA.m4a'] // 0:短〜4:長
+      },
+      {
+        key:'B', unlocked:false,
+        imgIdx:[5,6,7,8],
+        audio:['B.m4a','BB.m4a','BBB.m4a','BBBB.m4a','BBBBB.m4a']
+      }
+      // ここに C〜Z を追加予定
     ]
   };
 
@@ -164,7 +174,11 @@
     sfx:$('#sfxClick')
   };
 
-  const state = { li:0, ci:0, doneThisLetter:false };
+  const state = {
+    li:0, // letter index
+    ci:0, // card index (0..3)
+    doneThisLetter:false,
+  };
 
   // ---- Utils ----
   function $(q){return document.querySelector(q)}
@@ -197,7 +211,6 @@
     return n? `${n.key}（${n.unlocked?'ロック解除':'ロック中'}）` : 'なし';
   }
 
-  // --- audio helpers ---
   function playLetter(levelIdx=0){
     const src = `assets/audio/${ current().audio[levelIdx] }`;
     const au = new Audio(src);
@@ -208,6 +221,12 @@
   }
   function playMagic(){
     try{ const m = document.getElementById('sfxMagic'); m.currentTime = 0; m.play().catch(()=>{}); }catch(e){}
+  } }catch(e){}
+    setTimeout(()=>{
+      const src = `assets/audio/${ current().audio[levelIdx] }`;
+      const au = new Audio(src);
+      au.play().catch(()=>{});
+    }, cfg.delayMs);
   }
 
   function confettiBurst(){
@@ -225,6 +244,7 @@
       setTimeout(()=>d.remove(), 900);
     }
   }
+  }
 
   // ---- Event wiring ----
   els.startBtn.addEventListener('click', ()=>{
@@ -233,23 +253,26 @@
     updateUI();
   });
 
-  // Number buttons: audio only (no SFX)
   els.numBtns.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const idx = +btn.dataset.idx;
       state.ci = idx;
       btn.classList.add('active');
-      // 1→A, 2→AA, 3→AAA, 4→AAAA
+      // 1→A, 2→AA, 3→AAA, 4→AAAA（SFXなし／オーディオのみ）
       playLetter(idx>3?3:idx);
       updateUI();
     });
   });
+  });
 
-  els.prevBtn.addEventListener('click', ()=>{ state.ci = (state.ci+3)%4; updateUI(); });
-  els.nextBtn.addEventListener('click', ()=>{ state.ci = (state.ci+1)%4; updateUI(); });
+  els.prevBtn.addEventListener('click', ()=>{
+    state.ci = (state.ci+3)%4; updateUI();
+  });
+  els.nextBtn.addEventListener('click', ()=>{
+    state.ci = (state.ci+1)%4; updateUI();
+  });
 
-  els.finishBtn.addEventListener('click', ()=>{
-    playFinishSfx(); // SFX only here
+  els.finishBtn.addEventListener('click', ()=>{ playFinishSfx();
     if(state.doneThisLetter){ toast('この文字は復習モードです'); return; }
     state.doneThisLetter = true;
     confettiBurst();
@@ -283,7 +306,7 @@
     state.li = nl; state.ci=0; state.doneThisLetter=false; save(); updateUI();
   }
 
-  // 画面遷移用ヘルプ（ダブルタップで次のレター）
+  // 画面遷移用ヘルプ（タップで次のレター）
   els.cardArea.addEventListener('dblclick', ()=> moveLetter(1));
 
   // 初期化
