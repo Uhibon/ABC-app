@@ -83,7 +83,7 @@
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* TEMP TEST CONTROLS (bottom) */
+    /* ===== TEMP TEST CONTROLS (bottom) ===== */
     .test-controls{
       position:fixed;left:0;right:0;bottom:8px;
       display:flex;gap:8px;justify-content:center;z-index:60;
@@ -185,25 +185,25 @@
     const devBack  = document.getElementById("devBack");
     const devNext  = document.getElementById("devNext");
     const devReset = document.getElementById("devReset");
-    let testIndex = 1; // 1..4 fake-cycle
 
-    let activeIndex = 0;
-    let audioStep = 0;
+    // App state
+    let activeIndex = 0;     // 0=A, 1=B, 2=C, 3=D, ...
+    let audioStep = 0;       // 0..4 sequence with buttons 1..4
     let confettiRunning = false;
     let doneSet = loadDoneSet();
+    const MAX_LETTER_INDEX_FOR_CARDS = 3; // A–D only have mapped cards right now
 
     function startApp(){
       try {
         if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); }
       } catch(_) {}
       hello.style.display = "none";
-      showLetter();
+      showLetter(); // initial show uses current unlocked (see inside)
     }
 
-    // Bind start in several safe ways (covers rare race/inline timing issues)
+    // Bind start robustly
     startBtn?.addEventListener('click', startApp);
     document.addEventListener('DOMContentLoaded', ()=> startBtn?.addEventListener('click', startApp));
-    // Fallback: pressing Enter also starts
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && hello.style.display !== 'none') startApp(); });
 
     function loadDoneSet(){
@@ -217,6 +217,7 @@
       try { localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); } catch {}
     }
 
+    // Daily unlock helpers
     function getUnlockedCount(){
       if(!startTs) return 0;
       const elapsed = Date.now() - startTs;
@@ -238,28 +239,17 @@
       return `${h}:${m}:${ss}`;
     }
 
-    function showLetter(){
-      const unlocked = getUnlockedCount();
-      activeIndex = unlocked - 1;
-      barFill.style.width = (unlocked/26*100) + "%";
-
-      setCard(1);
-      testIndex = 1;
-
-      const L = letters[activeIndex];
-      if (doneSet.has(L)){
-        audioStep = 4;
-        setAllButtonsEnabled(true);
-        finishBtn.style.display = "none";
-      } else {
-        audioStep = 0;
-        setButtonStates();
-        finishBtn.style.display = "none";
-      }
+    // --- Card mapping A–D (4 cards per letter) ---
+    function getCardBase(letterIndex){
+      // 0=A, 1=B, 2=C, 3=D → 0,4,8,12
+      return letterIndex * 4;
     }
 
     function setCard(n){
-      const src = `./${n}.jpg`;
+      // n is 1..4 within the current letter
+      const base = getCardBase(Math.min(activeIndex, MAX_LETTER_INDEX_FOR_CARDS));
+      const cardNum = base + n;  // e.g. B (index=1): base=4 → 5..8
+      const src = `./${cardNum}.jpg`;
       cardImg.src = src;
       cardImg.alt = `カード${n}`;
     }
@@ -276,8 +266,8 @@
     }
 
     function playAudioFor(step){
-      const L = letters[activeIndex];
-      const name = L.repeat(step);
+      const L = letters[activeIndex];        // A/B/C/D...
+      const name = L.repeat(step);           // "A", "AA", "AAA", "AAAA"
       const src = `assets/audio/${name}.m4a`;
       const audio = new Audio(src);
       audio.play().catch(()=>{});
@@ -289,6 +279,30 @@
     function flashPressed(el){
       el.classList.add("pressed");
       setTimeout(()=>el.classList.remove("pressed"), 150);
+    }
+
+    // Show current letter (optionally preserve activeIndex for dev nav)
+    function showLetter({preserveIndex=false} = {}){
+      const unlocked = getUnlockedCount();
+      if(!preserveIndex){
+        // default: follow daily unlock, but clamp to A–D for visuals
+        activeIndex = Math.min(Math.max(unlocked - 1, 0), MAX_LETTER_INDEX_FOR_CARDS);
+      }
+      barFill.style.width = (unlocked/26*100) + "%";
+
+      // reset to first card of the current letter
+      setCard(1);
+
+      const L = letters[activeIndex];
+      if (doneSet.has(L)){
+        audioStep = 4;
+        setAllButtonsEnabled(true);
+        finishBtn.style.display = "none";
+      } else {
+        audioStep = 0;
+        setButtonStates();
+        finishBtn.style.display = "none";
+      }
     }
 
     // Buttons 1–4: AUDIO ONLY (no SFX)
@@ -374,33 +388,31 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ===== TEMP BUTTON LOGIC ===== */
-devBack.onclick = ()=>{
-  if(activeIndex > 0){
-    activeIndex--;
-    audioStep = 0;
-    finishBtn.style.display = "none";
-    showLetter();
-  }
-};
-
-devNext.onclick = ()=>{
-  if(activeIndex < letters.length-1){
-    activeIndex++;
-    audioStep = 0;
-    finishBtn.style.display = "none";
-    showLetter();
-  }
-};
-
-devReset.onclick = ()=>{
-  try {
-    localStorage.removeItem(LS_KEY_START);
-    localStorage.removeItem(LS_KEY_DONE);
-  } finally {
-    location.reload();
-  }
-};
+    /* ===== TEMP BUTTON LOGIC (letters A→D) ===== */
+    devBack.onclick = ()=>{
+      if(activeIndex > 0){
+        activeIndex--;
+        audioStep = 0;
+        finishBtn.style.display = "none";
+        showLetter({preserveIndex:true}); // don't override with daily unlock
+      }
+    };
+    devNext.onclick = ()=>{
+      if(activeIndex < MAX_LETTER_INDEX_FOR_CARDS){
+        activeIndex++;
+        audioStep = 0;
+        finishBtn.style.display = "none";
+        showLetter({preserveIndex:true}); // don't override with daily unlock
+      }
+    };
+    devReset.onclick = ()=>{
+      try {
+        localStorage.removeItem(LS_KEY_START);
+        localStorage.removeItem(LS_KEY_DONE);
+      } finally {
+        location.reload();
+      }
+    };
   </script>
 </body>
 </html>
