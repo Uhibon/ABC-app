@@ -29,7 +29,6 @@
     .progress{flex:1;margin-right:12px}
     .bar{height:12px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%;transition:width .35s ease}
-
     .countdown{font-size:14px;color:#333}
 
     /* Letter screen with card */
@@ -79,6 +78,17 @@
     .btn-finish.pressed{background:#7c5cff}
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+    /* ===== TEMP TEST CONTROLS (bottom) ===== */
+    .test-controls{
+      position:fixed;left:0;right:0;bottom:8px;
+      display:flex;gap:8px;justify-content:center;z-index:60;
+    }
+    .test-controls .tbtn{
+      background:#111;color:#fff;border:0;border-radius:10px;
+      padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer;
+    }
+    .test-controls .tbtn:active{transform:scale(.98)}
   </style>
 </head>
 <body>
@@ -126,6 +136,13 @@
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
+  <!-- TEMP test controls -->
+  <div class="test-controls" aria-label="temporary test controls">
+    <button id="devBack"  class="tbtn">← back</button>
+    <button id="devNext"  class="tbtn">next →</button>
+    <button id="devReset" class="tbtn">reset</button>
+  </div>
+
   <canvas id="confetti"></canvas>
   <!-- SFX: only finish uses click; confetti uses magic -->
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
@@ -152,6 +169,12 @@
     const finishBtn = document.getElementById("finishBtn");
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
+
+    // TEMP controls
+    const devBack  = document.getElementById("devBack");
+    const devNext  = document.getElementById("devNext");
+    const devReset = document.getElementById("devReset");
+    let testIndex = 1; // 1..4 for visual cycling only
 
     let activeIndex = 0;
     let audioStep = 0;
@@ -202,6 +225,7 @@
       barFill.style.width = (unlocked/26*100) + "%";
 
       setCard(1);
+      testIndex = 1; // reset visual cycle
 
       const L = letters[activeIndex];
       if (doneSet.has(L)){
@@ -306,6 +330,7 @@
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
     let confetti = [];
+    let confettiRunning = false;
     function startConfetti(duration){
       if(confettiRunning) return;
       confettiRunning = true;
@@ -337,6 +362,23 @@
     window.onresize = resize;
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
+
+    /* ===== TEMP BUTTON LOGIC ===== */
+    devBack.onclick = ()=>{
+      testIndex = ((testIndex + 2) % 4) + 1; // 1..4 cycle backwards
+      cardImg.src = `./${testIndex}.jpg`;
+      cardImg.alt = `カード${testIndex}`;
+    };
+    devNext.onclick = ()=>{
+      testIndex = (testIndex % 4) + 1;       // 1..4 cycle forwards
+      cardImg.src = `./${testIndex}.jpg`;
+      cardImg.alt = `カード${testIndex}`;
+    };
+    devReset.onclick = ()=>{
+      localStorage.removeItem(LS_KEY_START);
+      localStorage.removeItem(LS_KEY_DONE);
+      location.reload();
+    };
   </script>
 </body>
 </html>
