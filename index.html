@@ -375,24 +375,32 @@
     resize();
 
     /* ===== TEMP BUTTON LOGIC ===== */
-    devBack.onclick = ()=>{
-      testIndex = ((testIndex + 2) % 4) + 1;
-      cardImg.src = `./${testIndex}.jpg`;
-      cardImg.alt = `カード${testIndex}`;
-    };
-    devNext.onclick = ()=>{
-      testIndex = (testIndex % 4) + 1;
-      cardImg.src = `./${testIndex}.jpg`;
-      cardImg.alt = `カード${testIndex}`;
-    };
-    devReset.onclick = ()=>{
-      try {
-        localStorage.removeItem(LS_KEY_START);
-        localStorage.removeItem(LS_KEY_DONE);
-      } finally {
-        location.reload();
-      }
-    };
+devBack.onclick = ()=>{
+  if(activeIndex > 0){
+    activeIndex--;
+    audioStep = 0;
+    finishBtn.style.display = "none";
+    showLetter();
+  }
+};
+
+devNext.onclick = ()=>{
+  if(activeIndex < letters.length-1){
+    activeIndex++;
+    audioStep = 0;
+    finishBtn.style.display = "none";
+    showLetter();
+  }
+};
+
+devReset.onclick = ()=>{
+  try {
+    localStorage.removeItem(LS_KEY_START);
+    localStorage.removeItem(LS_KEY_DONE);
+  } finally {
+    location.reload();
+  }
+};
   </script>
 </body>
 </html>
