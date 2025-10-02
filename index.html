@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ブーハABC</title>
 
-  <!-- EARLY fallback so the Start button always works -->
+  <!-- EARLY ultra-safe fallback: minimal startApp in case later JS fails -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
@@ -13,7 +13,7 @@
       const img = document.getElementById('cardImg');
       if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
     }
-    window.startApp = startApp; // keep global for inline onclick
+    window.startApp = startApp; // keep global for inline/late calls
   </script>
 
   <style>
@@ -21,14 +21,20 @@
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
+    /* CSS-only fallback: when #go is targeted, hide hello overlay (works with no JS) */
+    #go:target ~ #hello{display:none}
+
     /* Hello / Start */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.75);z-index:10}
     .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:420px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
     .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
     .hello-card p{margin:4px 0;font-size:13px;color:#444}
-    .hello-card button{margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;box-shadow:0 10px 18px rgba(255,77,166,.28)}
-    .hello-card button:active{transform:scale(.98)}
+    .start-link, .hello-card button{
+      display:inline-block;margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;text-decoration:none;
+      background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;box-shadow:0 10px 18px rgba(255,77,166,.28)
+    }
+    .hello-card button:active, .start-link:active{transform:scale(.98)}
 
     /* Top bar */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
@@ -44,20 +50,16 @@
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
-    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s ease, filter .12s ease, background .12s ease}
+    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s}
     .btn-audio .num{font-size:26px}
-    .btn1{background:#ff5959}
-    .btn2{background:#06b6d4}
-    .btn3{background:#ffd166;color:#111}
-    .btn4{background:#7c5cff}
+    .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    /* AFTER-CLICK COLOR CHANGE */
+    /* Color change after click */
     .btn1.done{background:#ff7a7a}
     .btn2.done{background:#16c1de}
     .btn3.done{background:#ffe08c;color:#111}
     .btn4.done{background:#9a86ff}
-    /* optional tiny check flair */
-    .btn-audio.done::after{content:"✓"; font-weight:900; font-size:14px; margin-left:6px}
+    .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
 
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
@@ -93,6 +95,9 @@
   </style>
 </head>
 <body>
+  <!-- CSS-only Start fallback anchor (no JS needed) -->
+  <div id="go"></div>
+
   <div class="bg"></div>
   <div class="overlay"></div>
 
@@ -101,7 +106,10 @@
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>こんにちは！</h1>
-      <p>A〜Hのカードで練習しましょう。5つの文字が終わるごとにテストが出ます。</p>
+      <p>A〜Hのカードで練習。5つの<strong>文字</strong>が終わるごとにテストが出ます。</p>
+      <!-- works even with JS off -->
+      <a class="start-link" href="#go">スタート</a>
+      <!-- JS-enhanced duplicate (optional) -->
       <button id="startBtn" type="button" onclick="startApp()">スタート</button>
     </div>
   </div>
@@ -157,6 +165,7 @@
     </div>
   </div>
 
+  <!-- MAIN APP -->
   <script>
     /* ---------- Safety net ---------- */
     (function trap(){
@@ -170,8 +179,8 @@
     const MAX_IDX = 7; // A..H mapped -> 1..32.jpg
 
     // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";        // unique finished letters (array)
-    const LS_KEY_LAST_TEST = "abc_last_test_m";    // last milestone group triggered (0,1,2,...)
+    const LS_KEY_DONE = "abc_done_letters";     // array of finished letter chars
+    const LS_KEY_LAST_TEST = "abc_last_test_m"; // last milestone group triggered (0,1,2,...)
 
     // DOM
     const hello = document.getElementById("hello");
@@ -186,7 +195,7 @@
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
 
-    // Dev helpers
+    // Dev
     const prev = document.getElementById("prev");
     const next = document.getElementById("next");
     const reset = document.getElementById("reset");
@@ -201,10 +210,9 @@
 
     /* ---------- App state ---------- */
     let letterIdx = 0; // 0=A
-    let step = 0;      // 0..4 (which play button next)
     let confettiRunning = false;
-    let doneSet = loadDoneSet();                 // Set of finished letter chars
-    let lastMilestoneDone = loadLastMilestone(); // integer (0,1,2,...)
+    let doneSet = loadDoneSet();
+    let lastMilestoneDone = loadLastMilestone();
 
     /* ---------- Helpers ---------- */
     function loadDoneSet(){
@@ -237,18 +245,23 @@
       where.textContent = `${letters[letterIdx]} / 4枚`;
     }
 
-    /* ---------- Start (upgrade fallback) ---------- */
+    /* ---------- Start upgrade ---------- */
     function startAppFull(){
-      startApp(); // hide overlay via fallback
+      startApp(); // hide overlay via fallback (already defined early)
       letterIdx = Math.max(0, Math.min(letterIdx, MAX_IDX));
-      step = 0;
       setButtonColorsReset();
       showCard(1);
       updateTop();
     }
-    // upgrade the global
+    // Upgrade the global + bind
     window.startApp = startAppFull;
     document.getElementById('startBtn')?.addEventListener('click', startAppFull);
+    // If still visible after load, try once more
+    window.addEventListener('load', ()=>{
+      if(hello && hello.style.display !== 'none'){
+        document.getElementById('startBtn')?.addEventListener('click', startAppFull);
+      }
+    });
 
     /* ---------- Audio ---------- */
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
@@ -265,34 +278,30 @@
     }
 
     /* ---------- Button color helpers ---------- */
-    function setButtonColorsReset(){
-      [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done'));
-    }
+    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
     function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
 
-    /* ---------- Buttons 1..4 (also color-change) ---------- */
-    btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); step = 1; markBtnDone(btn1); };
-    btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); step = 2; markBtnDone(btn2); };
-    btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); step = 3; markBtnDone(btn3); };
-    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); step = 4; markBtnDone(btn4); finishBtn.style.display='inline-block'; };
+    /* ---------- Buttons 1..4 (color-change on click) ---------- */
+    btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); markBtnDone(btn1); };
+    btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); markBtnDone(btn2); };
+    btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); markBtnDone(btn3); };
+    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); markBtnDone(btn4); finishBtn.style.display='inline-block'; };
 
     /* ---------- Finish current letter ---------- */
     finishBtn.onclick = ()=>{
       playClick();
       // Mark letter as done (unique)
       const L = letters[letterIdx];
-      if(!doneSet.has(L)){
-        doneSet.add(L);
-        saveDoneSet();
-      }
-      // Reward
+      if(!doneSet.has(L)){ doneSet.add(L); saveDoneSet(); }
+
+      // Reward + reset
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(2000);
       finishBtn.style.display='none';
-      step = 0;
-      // Auto-advance
-      letterIdx = Math.min(MAX_IDX, letterIdx+1);
       setButtonColorsReset();
+
+      // Advance to next letter within A–H
+      letterIdx = Math.min(MAX_IDX, letterIdx+1);
       showCard(1);
       updateTop();
 
@@ -306,8 +315,8 @@
     };
 
     /* ---------- Dev nav ---------- */
-    prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); step=0; finishBtn.style.display='none'; setButtonColorsReset(); showCard(1); updateTop(); };
-    next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); step=0; finishBtn.style.display='none'; setButtonColorsReset(); showCard(1); updateTop(); };
+    prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop(); };
+    next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop(); };
     reset.onclick = ()=>{
       try{ localStorage.removeItem(LS_KEY_DONE); localStorage.removeItem(LS_KEY_LAST_TEST);} finally{ location.reload(); }
     };
@@ -315,26 +324,20 @@
     /* ---------- Fireworks (2s confetti) ---------- */
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
+    let confettiRunning=false;
     function startFireworks(duration){
       if(confettiRunning) return;
       confettiRunning = true;
       resize();
       const pieces = Array.from({length:260}).map(()=>({
-        x: Math.random()*canvas.width,
-        y: Math.random()*canvas.height - canvas.height,
-        r: Math.random()*8+3,
-        d: Math.random()*1+0.5,
-        c: `hsl(${Math.random()*360},100%,50%)`
+        x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
+        r: Math.random()*8+3, d: Math.random()*1+0.5, c: `hsl(${Math.random()*360},100%,50%)`
       }));
       const end = Date.now() + duration;
       (function draw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        for(const p of pieces){
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle=p.c; ctx.fill();
-          p.y += p.d*4; if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; }
-        }
-        if(Date.now()<end) requestAnimationFrame(draw);
-        else { confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+        for(const p of pieces){ ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle=p.c; ctx.fill(); p.y+=p.d*4; if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; } }
+        if(Date.now()<end) requestAnimationFrame(draw); else { confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
       })();
     }
     window.onresize = resize;
@@ -382,7 +385,7 @@
       // UI bits
       tHint.textContent = '';
       tClose.style.display = 'none';
-      tProgress.textContent = '1 / 1'; // single question per test (spec)
+      tProgress.textContent = '1 / 1'; // one question per test
       test.classList.add('active');
 
       // Auto play once on open
@@ -395,6 +398,9 @@
     }
 
     function closeTest(){ test.classList.remove('active'); }
+
+    // Initialize visual state (in case Start already used via hash)
+    if(location.hash === '#go'){ startAppFull(); }
   </script>
 </body>
 </html>
