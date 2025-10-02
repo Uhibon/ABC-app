@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ブーハABC</title>
 
-  <!-- EARLY: minimal fallback so Start always works even if later JS fails -->
+  <!-- EARLY fallback so Start works even if later JS errors -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
@@ -13,7 +13,7 @@
       const img = document.getElementById('cardImg');
       if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
     }
-    window.startApp = startApp; // keep global for inline onclick
+    window.startApp = startApp;
   </script>
 
   <style>
@@ -33,14 +33,14 @@
     /* Top bar */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
     .left{display:flex;align-items:center;gap:10px}
-    .progress{width:150px}
+    .progress{width:160px}
     .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
-    .actions{display:flex;gap:8px}
+    .where{font-weight:800}
     .chip{border:0;border-radius:14px;padding:8px 12px;font-weight:800;cursor:pointer;background:#111;color:#fff}
     .chip:active{transform:scale(.98)}
 
-    /* Letter view */
+    /* Letter screen */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;gap:16px;text-align:center}
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
@@ -53,33 +53,34 @@
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.92)}
 
-    /* Dev row */
+    /* Dev row (optional) */
     .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
     .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
     .tbtn:active{transform:scale(.98)}
 
-    /* Confetti canvas */
+    /* Confetti/Fireworks */
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* Quiz modal */
-    #quiz{position:fixed;inset:0;z-index:80;display:none}
-    #quiz.active{display:block}
-    .q-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
-    .q-card{position:relative;z-index:81;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
-    .q-title{margin:6px 0 2px;font-size:24px}
-    .q-prompt{margin:4px 0 12px;color:#444}
-    .q-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-    .q-grid{display:grid;gap:12px;grid-template-columns:repeat(4,1fr)}
-    .q-btn{background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;transition:transform .1s, border-color .12s}
-    .q-btn img{width:100%;height:170px;object-fit:contain}
-    .q-btn:active{transform:scale(.98)}
-    .q-btn.correct{border-color:#22c55e}
-    .q-btn.wrong{border-color:#ef4444}
-    .q-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
-    .q-chip{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
-    .q-ok{background:#28a745}
-    .q-progress{font-weight:800}
-    @media (max-width:820px){.q-grid{grid-template-columns:repeat(2,1fr)}.q-btn img{height:140px}}
+    /* === TEST PAGE (modal) === */
+    #test{position:fixed;inset:0;z-index:80;display:none}
+    #test.active{display:block}
+    .t-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
+    .t-card{position:relative;z-index:81;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+    .t-title{margin:6px 0 2px;font-size:24px}
+    .t-prompt{margin:4px 0 12px;color:#444}
+    .t-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .t-grid{display:grid;gap:12px;grid-template-columns:repeat(4,1fr)}
+    .t-item{background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;transition:transform .1s, border-color .12s}
+    .t-item img{width:100%;height:170px;object-fit:contain}
+    .t-item:active{transform:scale(.98)}
+    .t-item.correct{border-color:#22c55e}
+    .t-item.wrong{border-color:#ef4444}
+    .t-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .t-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
+    .t-ok{background:#28a745}
+    .t-progress{font-weight:800}
+    .t-hint{color:#555;font-size:14px}
+    @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
   </style>
 </head>
 <body>
@@ -91,8 +92,8 @@
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>こんにちは！</h1>
-      <p>スタートすると、A〜Hのカードとクイズで練習できます。</p>
-      <p>音声はタップで再生されます。</p>
+      <p>スタートすると、A〜Hのカードとテストで練習できます。</p>
+      <p>5つの文字が終わるごとにテストが出ます。</p>
       <button id="startBtn" type="button" onclick="startApp()">スタート</button>
     </div>
   </div>
@@ -100,25 +101,21 @@
   <!-- Top bar -->
   <div class="topbar">
     <div class="left">
-      <div class="progress"><div class="bar"><i id="barFill" style="width:0%"></i></div></div>
-      <div id="where" aria-live="polite">A / 4枚</div>
+      <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
+      <div id="where" class="where" aria-live="polite">A / 4枚</div>
     </div>
-    <div class="actions">
-      <button id="quizBtn" class="chip">クイズ</button>
-    </div>
+    <button id="manualTest" class="chip">テスト</button>
   </div>
 
   <!-- Letter screen -->
   <div class="letter-screen">
     <div class="card-wrap"><img id="cardImg" src="./1.jpg" alt="カード1" /></div>
-
     <div class="buttons">
       <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
       <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
       <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
-
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
@@ -127,7 +124,6 @@
     <button id="prev" class="tbtn">← letter</button>
     <button id="next" class="tbtn">letter →</button>
     <button id="reset" class="tbtn">reset</button>
-    <button id="demoB" class="tbtn">Bクイズ(1/5/9/13)</button>
   </div>
 
   <canvas id="confetti"></canvas>
@@ -136,20 +132,20 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- Quiz modal -->
-  <div id="quiz" style="display:none">
-    <div class="q-back"></div>
-    <div class="q-card">
-      <h2 class="q-title" id="qTitle">クイック・クイズ</h2>
-      <p class="q-prompt" id="qPrompt">音声を聞いて、正しいカードをえらぼう！</p>
-      <div class="q-ctrl">
-        <button id="qPlay" class="q-chip">▶︎ 再生</button>
-        <span id="qHint" style="color:#555;font-size:14px"></span>
+  <!-- === TEST PAGE (modal) === -->
+  <div id="test" style="display:none">
+    <div class="t-back"></div>
+    <div class="t-card">
+      <h2 class="t-title" id="tTitle">テスト</h2>
+      <p class="t-prompt" id="tPrompt">音声を聞いて、正しいカードをえらぼう！</p>
+      <div class="t-ctrl">
+        <button id="tPlay" class="t-btn">▶︎ 再生</button>
+        <span id="tHint" class="t-hint"></span>
       </div>
-      <div id="qGrid" class="q-grid"></div>
-      <div class="q-bottom">
-        <div id="qProgress" class="q-progress">1 / 3</div>
-        <button id="qClose" class="q-chip q-ok" style="display:none">OK</button>
+      <div id="tGrid" class="t-grid"></div>
+      <div class="t-bottom">
+        <div id="tProgress" class="t-progress">1 / 1</div>
+        <button id="tClose" class="t-btn t-ok" style="display:none">OK</button>
       </div>
     </div>
   </div>
@@ -165,6 +161,12 @@
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
     const MAX_IDX = 7; // A..H mapped -> 1..32.jpg
+
+    // LocalStorage keys
+    const LS_KEY_DONE = "abc_done_letters";        // stores array of finished letters (unique)
+    const LS_KEY_LAST_TEST = "abc_last_test_m";    // last milestone tested (integer count of groups of 5)
+
+    // DOM
     const hello = document.getElementById("hello");
     const barFill = document.getElementById("barFill");
     const where = document.getElementById("where");
@@ -176,18 +178,46 @@
     const finishBtn = document.getElementById("finishBtn");
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
-    const quizBtn = document.getElementById("quizBtn");
+    const manualTest = document.getElementById("manualTest");
+
     const prev = document.getElementById("prev");
     const next = document.getElementById("next");
     const reset = document.getElementById("reset");
-    const demoB = document.getElementById("demoB");
+
+    // Test modal
+    const test = document.getElementById("test");
+    const tGrid = document.getElementById("tGrid");
+    const tPlay = document.getElementById("tPlay");
+    const tHint = document.getElementById("tHint");
+    const tClose = document.getElementById("tClose");
+    const tProgress = document.getElementById("tProgress");
 
     /* ---------- App state ---------- */
     let letterIdx = 0; // 0=A
-    let step = 0;      // which play button next (0..4)
+    let step = 0;      // 0..4 (which play button next)
     let confettiRunning = false;
+    let doneSet = loadDoneSet();                 // Set of finished letter chars
+    let lastMilestoneDone = loadLastMilestone(); // integer (0,1,2,...)
+
+    /* ---------- Helpers ---------- */
+    function loadDoneSet(){
+      try{ const raw = localStorage.getItem(LS_KEY_DONE); return new Set(raw?JSON.parse(raw):[]); }
+      catch{ return new Set(); }
+    }
+    function saveDoneSet(){
+      try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); }catch{}
+    }
+    function loadLastMilestone(){
+      const n = Number(localStorage.getItem(LS_KEY_LAST_TEST)||0);
+      return Number.isFinite(n)?n:0;
+    }
+    function saveLastMilestone(n){
+      try{ localStorage.setItem(LS_KEY_LAST_TEST, String(n)); }catch{}
+    }
 
     function getCardBase(i){ return i*4; }
+    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; }
+
     function showCard(n){
       const base = getCardBase(Math.min(letterIdx, MAX_IDX));
       const num = base + n; // 1..4
@@ -195,10 +225,12 @@
       cardImg.alt = `カード${n}`;
     }
     function updateTop(){
-      barFill.style.width = (((letterIdx+1)/26)*100)+"%";
+      const progress = (doneSet.size/26)*100;
+      barFill.style.width = progress + "%";
       where.textContent = `${letters[letterIdx]} / 4枚`;
     }
 
+    /* ---------- Start ---------- */
     function startApp(){ // upgrades fallback
       hello.style.display = "none";
       letterIdx = Math.max(0, Math.min(letterIdx, MAX_IDX));
@@ -206,22 +238,26 @@
       showCard(1);
       updateTop();
     }
-    window.startApp = startApp; // keep global for inline onclick
+    window.startApp = startApp;
     document.getElementById('startBtn')?.addEventListener('click', startApp);
-    window.addEventListener('load', ()=>{ // if overlay somehow still up, rebind
+    window.addEventListener('load', ()=>{
       if(hello.style.display !== 'none'){
         document.getElementById('startBtn')?.addEventListener('click', startApp);
       }
     });
 
-    /* ---------- Audio helpers ---------- */
+    /* ---------- Audio ---------- */
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
     function playLetterTimes(times){
       const L = letters[letterIdx];
       const name = L.repeat(times); // "A","AA","AAA","AAAA"
       const src = `assets/audio/${name}.m4a`;
-      const a = new Audio(src);
-      a.play().catch(()=>{});
+      new Audio(src).play().catch(()=>{});
+    }
+    function playLetterCueByIndex(idx){
+      const L = letters[idx];
+      tHint.textContent = `（${L} の音）`;
+      new Audio(`assets/audio/${L}.m4a`).play().catch(()=>{});
     }
 
     /* ---------- Buttons 1..4 ---------- */
@@ -230,34 +266,50 @@
     btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); step = 3; };
     btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); step = 4; finishBtn.style.display='inline-block'; };
 
-    /* ---------- Finish letter ---------- */
+    /* ---------- Finish current letter ---------- */
     finishBtn.onclick = ()=>{
       playClick();
+      // Mark letter as done (unique)
+      const L = letters[letterIdx];
+      if(!doneSet.has(L)){
+        doneSet.add(L);
+        saveDoneSet();
+      }
+      // Reward + advance
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-      startConfetti(1500);
+      startFireworks(2000);
       finishBtn.style.display='none';
       step = 0;
-      // auto-advance to next letter (loops within A–H)
-      letterIdx = (letterIdx+1)%(MAX_IDX+1);
+      // Auto-advance
+      letterIdx = Math.min(MAX_IDX, letterIdx+1);
       showCard(1);
       updateTop();
-      // prompt: offer quiz
-      openQuiz(); // fun: pop a quiz right after finish
+
+      // ---- Test trigger: after every 5 unique letters ----
+      const completed = doneSet.size;
+      const milestone = Math.floor(completed/5);  // 0->4=0, 5->9=1, 10->14=2, ...
+      if(completed>0 && completed % 5 === 0 && milestone > lastMilestoneDone){
+        lastMilestoneDone = milestone;
+        saveLastMilestone(milestone);
+        openTest(); // pops immediately
+      }
     };
 
     /* ---------- Dev nav ---------- */
     prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); step=0; finishBtn.style.display='none'; showCard(1); updateTop(); };
     next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); step=0; finishBtn.style.display='none'; showCard(1); updateTop(); };
-    reset.onclick = ()=>{ location.reload(); };
+    reset.onclick = ()=>{
+      try{ localStorage.removeItem(LS_KEY_DONE); localStorage.removeItem(LS_KEY_LAST_TEST);} finally{ location.reload(); }
+    };
 
-    /* ---------- Confetti ---------- */
+    /* ---------- Fireworks (2s confetti) ---------- */
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
-    function startConfetti(duration){
+    function startFireworks(duration){
       if(confettiRunning) return;
       confettiRunning = true;
       resize();
-      const pieces = Array.from({length:220}).map(()=>({
+      const pieces = Array.from({length:240}).map(()=>({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height - canvas.height,
         r: Math.random()*8+3,
@@ -267,68 +319,37 @@
       const end = Date.now() + duration;
       (function draw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        for(const p of pieces){ ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle=p.c; ctx.fill(); p.y+=p.d*4; if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; } }
-        if(Date.now()<end) requestAnimationFrame(draw); else { confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+        for(const p of pieces){
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle=p.c; ctx.fill();
+          p.y += p.d*4; if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; }
+        }
+        if(Date.now()<end) requestAnimationFrame(draw);
+        else { confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
       })();
     }
     window.onresize = resize;
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ---------- QUIZ: 4-choice sound match (3 rounds) ---------- */
-    const quiz = document.getElementById("quiz");
-    const qGrid = document.getElementById("qGrid");
-    const qPlay = document.getElementById("qPlay");
-    const qClose = document.getElementById("qClose");
-    const qProgress = document.getElementById("qProgress");
-    const qHint = document.getElementById("qHint");
+    /* ---------- TEST PAGE LOGIC ---------- */
+    manualTest.addEventListener('click', openTest);
 
-    let round = 0;
-    const TOTAL_ROUNDS = 3;
+    function openTest(){
+      // Build a pool from completed letters; if fewer than 4, fallback to A–H
+      const completedIdxs = [...doneSet]
+        .map(L => letters.indexOf(L))
+        .filter(i => i>=0 && i<=MAX_IDX);
 
-    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; }
+      let pool = completedIdxs.length >= 4 ? completedIdxs : Array.from({length:MAX_IDX+1}, (_,i)=>i);
+      // pick 4 distinct
+      pool = shuffle(pool).slice(0,4);
+      const correctIdx = pool[Math.floor(Math.random()*pool.length)];
 
-    function pick4Letters(){
-      const pool = Array.from({length:MAX_IDX+1}, (_,i)=>i);
-      pool.sort(()=>Math.random()-0.5);
-      return pool.slice(0,4);
-    }
-
-    function playLetterCue(idx){
-      const L = letters[idx];
-      const a = new Audio(`assets/audio/${L}.m4a`);
-      a.play().catch(()=>{});
-      qHint.textContent = `（${L} の音）`;
-    }
-
-    function openQuiz(){
-      round = 0;
-      qClose.style.display = 'none';
-      quiz.classList.add('active');
-      nextRound();
-    }
-
-    function nextRound(){
-      round++;
-      if(round > TOTAL_ROUNDS){
-        startConfetti(1200);
-        qProgress.textContent = `${TOTAL_ROUNDS} / ${TOTAL_ROUNDS}`;
-        qHint.textContent = 'よくできました！';
-        qClose.style.display = 'inline-block';
-        return;
-      }
-
-      qProgress.textContent = `${round} / ${TOTAL_ROUNDS}`;
-      qGrid.innerHTML = '';
-
-      const choices = pick4Letters();               // 4 letter indices
-      const correctIdx = choices[Math.floor(Math.random()*choices.length)];
-
-      // render
-      for(const idx of choices){
+      // Render grid
+      tGrid.innerHTML = '';
+      for(const idx of pool){
         const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'q-btn';
+        btn.type='button'; btn.className='t-item';
         const img = document.createElement('img');
         img.src = firstCardSrc(idx);
         img.alt = 'えらぶカード';
@@ -338,65 +359,41 @@
           btn.classList.add(ok?'correct':'wrong');
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-            // lock and advance
-            [...qGrid.querySelectorAll('.q-btn')].forEach(b=>b.disabled=true);
-            setTimeout(nextRound, 500);
+            // lock all items
+            [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
+            startFireworks(2000); // 2 sec
+            tClose.style.display = 'inline-block';
           }else{
-            setTimeout(()=>btn.classList.remove('wrong'), 380);
+            setTimeout(()=> btn.classList.remove('wrong'), 380);
           }
         };
-        qGrid.appendChild(btn);
+        tGrid.appendChild(btn);
       }
 
-      // play cue
-      qPlay.onclick = ()=> playLetterCue(correctIdx);
-      // auto play once
-      setTimeout(()=> qPlay.click(), 120);
+      // Play button for the cue
+      tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
+
+      // UI bits
+      tHint.textContent = '';
+      tClose.style.display = 'none';
+      tProgress.textContent = '1 / 1'; // single question per test (expandable)
+      test.classList.add('active');
+
+      // Auto play once on open
+      setTimeout(()=> tPlay.click(), 150);
+
+      // Close handlers
+      const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
+      test.addEventListener('click', backdropClose, {once:true});
+      tClose.onclick = closeTest;
     }
 
-    function closeQuiz(){ quiz.classList.remove('active'); }
-    quiz.addEventListener('click', e=>{ if(e.target.classList.contains('q-back')) closeQuiz(); });
-    qClose.addEventListener('click', closeQuiz);
-    quizBtn.addEventListener('click', openQuiz);
+    function closeTest(){ test.classList.remove('active'); }
 
-    /* ---------- DEMO: fixed B quiz (images 1,5,9,13; correct 5.jpg) ---------- */
-    demoB.addEventListener('click', ()=>{
-      // reuse modal but set fixed choices and fixed cue
-      round = 1; // single round feel
-      qProgress.textContent = `1 / 1`;
-      qHint.textContent = '（B の音）';
-      qClose.style.display = 'none';
-      qGrid.innerHTML = '';
-      const imgs = [1,5,9,13].map(n=>`./${n}.jpg`);
-      const correctSrc = './5.jpg';
-      imgs.sort(()=>Math.random()-0.5);
-      imgs.forEach(src=>{
-        const b = document.createElement('button');
-        b.type='button'; b.className='q-btn';
-        const img = document.createElement('img'); img.src = src; img.alt='えらぶカード';
-        b.appendChild(img);
-        b.onclick = ()=>{
-          const ok = (src===correctSrc);
-          b.classList.add(ok?'correct':'wrong');
-          if(ok){
-            try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-            [...qGrid.querySelectorAll('.q-btn')].forEach(x=>x.disabled=true);
-            qClose.style.display='inline-block';
-          }else{
-            setTimeout(()=> b.classList.remove('wrong'), 380);
-          }
-        };
-        qGrid.appendChild(b);
-      });
-      qPlay.onclick = ()=> new Audio('assets/audio/B.m4a').play().catch(()=>{});
-      quiz.classList.add('active');
-      setTimeout(()=> qPlay.click(), 120);
-    });
+    function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
-    /* ---------- Auto-hide overlay if previously started ---------- */
-    // (Optional: if you want to remember, uncomment below)
-    // if(localStorage.getItem('abc_started')) { startApp(); }
-    // document.getElementById('startBtn')?.addEventListener('click', ()=> localStorage.setItem('abc_started','1'));
+    // Initialize view
+    startApp();
   </script>
 </body>
 </html>
