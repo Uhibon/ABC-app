@@ -76,7 +76,6 @@
       margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;
       font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;
       box-shadow:0 10px 18px rgba(0,0,0,.18);
-      transition: transform 0.15s ease, background-color .12s ease;
     }
     .btn-finish:active{transform:scale(0.92)}
     .btn-finish.pressed{background:#7c5cff}
@@ -175,11 +174,12 @@
     <button id="devBack"  class="tbtn">← back</button>
     <button id="devNext"  class="tbtn">next →</button>
     <button id="devReset" class="tbtn">reset</button>
+    <button id="devQuiz"  class="tbtn">quiz ▶︎</button>
   </div>
 
   <canvas id="confetti"></canvas>
 
-  <!-- SFX: only finish uses click; confetti uses magic -->
+  <!-- SFX -->
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
@@ -207,9 +207,14 @@
       window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
     })();
 
+    // ===== DEMO SWITCH =====
+    // Set to false to re-enable daily unlock gating for the quiz & countdown
+    const DEMO_MODE = true;
+
     const MS_DAY = 24*60*60*1000;
     const LS_KEY_START = "abc_start_ts";
     const LS_KEY_DONE  = "abc_done_letters";
+    const LS_KEY_VIEWS = "abc_total_card_views"; // persisted overall view count
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
     let startTs = localStorage.getItem(LS_KEY_START)?Number(localStorage.getItem(LS_KEY_START)):null;
@@ -232,6 +237,7 @@
     const devBack  = document.getElementById("devBack");
     const devNext  = document.getElementById("devNext");
     const devReset = document.getElementById("devReset");
+    const devQuiz  = document.getElementById("devQuiz");
 
     // App state
     let activeIndex = 0;     // 0=A, 1=B, ...
@@ -243,17 +249,23 @@
     const MAX_LETTER_INDEX_FOR_CARDS = 7;
 
     // --- Mini game progress counters ---
-    const LS_KEY_VIEWS = "abc_total_card_views";
-    let totalViews = Number(localStorage.getItem(LS_KEY_VIEWS) || 0);
+    // Persisted total (optional analytics), and a per-session counter for fast triggering
+    let totalViewsPersisted = Number(localStorage.getItem(LS_KEY_VIEWS) || 0);
+    let sessionViews = 0; // resets on reload; triggers quiz every 4 views
     let seenThisLetter = new Set();
 
     function countViewOnce(n){
       if(!seenThisLetter.has(n)){
         seenThisLetter.add(n);
-        totalViews++;
-        try{ localStorage.setItem(LS_KEY_VIEWS, String(totalViews)); }catch{}
-        if (totalViews % 5 === 0) {
-          setTimeout(()=> openQuickQuiz(), 150);
+
+        // persisted counter (optional)
+        totalViewsPersisted++;
+        try{ localStorage.setItem(LS_KEY_VIEWS, String(totalViewsPersisted)); }catch{}
+
+        // session counter for visible/fast triggers
+        sessionViews++;
+        if (sessionViews % 4 === 0) {
+          setTimeout(()=> openQuickQuiz(), 120);
         }
       }
     }
@@ -282,14 +294,16 @@
       try { localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); } catch {}
     }
 
-    // Daily unlock helpers
+    // Daily unlock helpers (overridden in DEMO_MODE)
     function getUnlockedCount(){
+      if (DEMO_MODE) return MAX_LETTER_INDEX_FOR_CARDS + 1; // A–H unlocked
       if(!startTs) return 0;
       const elapsed = Date.now() - startTs;
       const days = Math.floor(elapsed / MS_DAY);
       return Math.min(26, Math.max(1, days + 1));
     }
     function nextUnlockMs(){
+      if (DEMO_MODE) return 0;
       if(!startTs) return null;
       const unlocked = getUnlockedCount();
       if(unlocked >= 26) return 0;
@@ -351,10 +365,12 @@
     function showLetter({preserveIndex=false} = {}){
       const unlocked = getUnlockedCount();
       if(!preserveIndex){
-        // follow daily unlock, but clamp to A–H for visuals
+        // follow unlock (or DEMO full unlock), clamp to A–H for visuals
         activeIndex = Math.min(Math.max(unlocked - 1, 0), MAX_LETTER_INDEX_FOR_CARDS);
       }
+      // progress bar & countdown
       barFill.style.width = (unlocked/26*100) + "%";
+      countdown.textContent = DEMO_MODE ? "デモ" : (nextUnlockMs() === 0 ? "すべて解放" : fmt(nextUnlockMs()));
 
       // each letter starts fresh for "first-time card view" tracking
       seenThisLetter = new Set();
@@ -400,7 +416,8 @@
       finishBtn.style.display = "inline-block";
     };
 
-    // Finish: plays SFX + confetti magic
+    // Finish: plays SFX + confetti magic — and (for demo) launch quiz once per letter
+    let quizzedThisLetter = false;
     finishBtn.onclick = () => {
       playClick(); flashPressed(finishBtn);
       const L = letters[activeIndex];
@@ -411,14 +428,22 @@
       }
       setAllButtonsEnabled(true);
       finishBtn.style.display = "none";
+
+      if (!quizzedThisLetter){
+        quizzedThisLetter = true;
+        setTimeout(()=> openQuickQuiz(), 250); // guaranteed visible
+      }
     };
 
-    function updateCountdown(){
-      const ms = nextUnlockMs();
-      countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
+    // Update countdown if not in demo
+    if(!DEMO_MODE){
+      function tick(){
+        const ms = nextUnlockMs();
+        countdown.textContent = ms === 0 ? "すべて解放" : fmt(ms);
+      }
+      setInterval(tick, 1000);
+      tick();
     }
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
 
     if(startTs){ hello.style.display="none"; showLetter(); }
 
@@ -480,6 +505,8 @@
 
     function closeQuickQuiz(){
       quizModal.classList.remove("active");
+      // allow a new letter to trigger a quiz again
+      quizzedThisLetter = false;
     }
 
     function playLetterAudio(L){
@@ -488,8 +515,13 @@
       a.play().catch(()=>{});
     }
 
-    // Build a pool of available letters (clamped to what you’ve mapped)
+    // Build a pool of available letters
     function getAvailableLetterIndices(){
+      if (DEMO_MODE){
+        const arr = [];
+        for(let i=0;i<=MAX_LETTER_INDEX_FOR_CARDS;i++) arr.push(i); // A–H
+        return arr;
+      }
       const maxIdx = Math.min(getUnlockedCount()-1, MAX_LETTER_INDEX_FOR_CARDS);
       const arr = [];
       for(let i=0;i<=maxIdx;i++) arr.push(i);
@@ -578,7 +610,7 @@
       if(e.target.classList.contains("quiz-backdrop")) closeQuickQuiz();
     });
 
-    /* ===== TEMP BUTTON LOGIC (letters A→H) ===== */
+    /* ===== DEV BUTTON LOGIC (letters A→H) ===== */
     devBack.onclick = ()=>{
       if(activeIndex > 0){
         activeIndex--;
@@ -604,6 +636,7 @@
         location.reload();
       }
     };
+    devQuiz.onclick = ()=> openQuickQuiz();
   </script>
 </body>
 </html>
