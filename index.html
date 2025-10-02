@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ブーハABC</title>
 
-  <!-- EARLY ultra-safe fallback: minimal startApp in case later JS fails -->
+  <!-- EARLY fallback: minimal start for safety -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
@@ -13,7 +13,7 @@
       const img = document.getElementById('cardImg');
       if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
     }
-    window.startApp = startApp; // keep global for inline/late calls
+    window.startApp = startApp;
   </script>
 
   <style>
@@ -30,11 +30,11 @@
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
     .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
     .hello-card p{margin:4px 0;font-size:13px;color:#444}
-    .start-link, .hello-card button{
+    .start-link{
       display:inline-block;margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;text-decoration:none;
-      background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;box-shadow:0 10px 18px rgba(255,77,166,.28)
+      background:#ff4da6;color:#fff;border-radius:14px;box-shadow:0 10px 18px rgba(255,77,166,.28);cursor:pointer
     }
-    .hello-card button:active, .start-link:active{transform:scale(.98)}
+    .start-link:active{transform:scale(.98)}
 
     /* Top bar */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
@@ -107,14 +107,12 @@
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>こんにちは！</h1>
       <p>A〜Hのカードで練習。5つの<strong>文字</strong>が終わるごとにテストが出ます。</p>
-      <!-- works even with JS off -->
-      <a class="start-link" href="#go">スタート</a>
-      <!-- JS-enhanced duplicate (optional) -->
-      <button id="startBtn" type="button" onclick="startApp()">スタート</button>
+      <!-- single Start button (works with/without JS) -->
+      <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
     </div>
   </div>
 
-  <!-- Top bar (no テスト button) -->
+  <!-- Top bar -->
   <div class="topbar">
     <div class="left">
       <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
@@ -174,6 +172,25 @@
       window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
     })();
 
+    /* ---------- Audio Manager (no overlapping) ---------- */
+    let activeAudio = null;
+    function stopActive(){
+      try{
+        if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; }
+      }catch(e){}
+      activeAudio = null;
+    }
+    function playSound(src){
+      stopActive();
+      try{
+        activeAudio = new Audio(src);
+        activeAudio.play().catch(()=>{});
+      }catch(e){}
+    }
+    // stop any playing audio when leaving page
+    window.addEventListener('pagehide', stopActive);
+    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
+
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
     const MAX_IDX = 7; // A..H mapped -> 1..32.jpg
@@ -210,9 +227,9 @@
 
     /* ---------- App state ---------- */
     let letterIdx = 0; // 0=A
-    let confettiRunning = false;
     let doneSet = loadDoneSet();
     let lastMilestoneDone = loadLastMilestone();
+    let confettiRunning = false;
 
     /* ---------- Helpers ---------- */
     function loadDoneSet(){
@@ -245,43 +262,38 @@
       where.textContent = `${letters[letterIdx]} / 4枚`;
     }
 
-    /* ---------- Start upgrade ---------- */
+    /* ---------- Start (JS version) ---------- */
     function startAppFull(){
-      startApp(); // hide overlay via fallback (already defined early)
+      startApp(); // hide overlay via early fallback
       letterIdx = Math.max(0, Math.min(letterIdx, MAX_IDX));
       setButtonColorsReset();
       showCard(1);
       updateTop();
     }
-    // Upgrade the global + bind
-    window.startApp = startAppFull;
-    document.getElementById('startBtn')?.addEventListener('click', startAppFull);
-    // If still visible after load, try once more
-    window.addEventListener('load', ()=>{
-      if(hello && hello.style.display !== 'none'){
-        document.getElementById('startBtn')?.addEventListener('click', startAppFull);
-      }
-    });
+    window.startAppFull = startAppFull;
 
-    /* ---------- Audio ---------- */
+    // If loaded directly with #go, auto-start JS initialization
+    if(location.hash === '#go'){ startAppFull(); }
+
+    /* ---------- Audio helpers (use manager) ---------- */
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
     function playLetterTimes(times){
       const L = letters[letterIdx];
       const name = L.repeat(times); // "A","AA","AAA","AAAA"
       const src = `assets/audio/${name}.m4a`;
-      new Audio(src).play().catch(()=>{});
+      playSound(src);
     }
     function playLetterCueByIndex(idx){
       const L = letters[idx];
       tHint.textContent = `（${L} の音）`;
-      new Audio(`assets/audio/${L}.m4a`).play().catch(()=>{});
+      playSound(`assets/audio/${L}.m4a`);
     }
 
     /* ---------- Button color helpers ---------- */
     function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
     function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
 
-    /* ---------- Buttons 1..4 (color-change on click) ---------- */
+    /* ---------- Buttons 1..4 (color-change on click, non-overlapping audio) ---------- */
     btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); markBtnDone(btn1); };
     btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); markBtnDone(btn2); };
     btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); markBtnDone(btn3); };
@@ -324,10 +336,8 @@
     /* ---------- Fireworks (2s confetti) ---------- */
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
-    let confettiRunning=false;
     function startFireworks(duration){
-      if(confettiRunning) return;
-      confettiRunning = true;
+      let confettiRunning=true;
       resize();
       const pieces = Array.from({length:260}).map(()=>({
         x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
@@ -337,7 +347,8 @@
       (function draw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
         for(const p of pieces){ ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle=p.c; ctx.fill(); p.y+=p.d*4; if(p.y>canvas.height){ p.y=-10; p.x=Math.random()*canvas.width; } }
-        if(Date.now()<end) requestAnimationFrame(draw); else { confettiRunning=false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+        if(Date.now()<end && confettiRunning) requestAnimationFrame(draw);
+        else { ctx.clearRect(0,0,canvas.width,canvas.height); confettiRunning=false; }
       })();
     }
     window.onresize = resize;
@@ -379,7 +390,7 @@
         tGrid.appendChild(btn);
       }
 
-      // One audio button plays the correct cue
+      // One audio button plays the correct cue (no overlap)
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
 
       // UI bits
@@ -388,8 +399,8 @@
       tProgress.textContent = '1 / 1'; // one question per test
       test.classList.add('active');
 
-      // Auto play once on open
-      setTimeout(()=> tPlay.click(), 150);
+      // Immediately play once (still within user gesture chain from Finish)
+      playLetterCueByIndex(correctIdx);
 
       // Close handlers
       const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
@@ -397,10 +408,7 @@
       tClose.onclick = closeTest;
     }
 
-    function closeTest(){ test.classList.remove('active'); }
-
-    // Initialize visual state (in case Start already used via hash)
-    if(location.hash === '#go'){ startAppFull(); }
+    function closeTest(){ test.classList.remove('active'); stopActive(); }
   </script>
 </body>
 </html>
