@@ -4,6 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ブーハABC</title>
+
+  <!-- EARLY: minimal startApp fallback so the Start button always works -->
+  <script>
+    // Minimal start (fallback). The main script later replaces this with the full one.
+    function startApp(){
+      const hello = document.getElementById('hello');
+      if (hello) hello.style.display = 'none';
+      // show first card image just in case
+      const img = document.getElementById('cardImg');
+      if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
+    }
+    // Make sure global for inline onclick
+    window.startApp = startApp;
+  </script>
+
   <style>
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
@@ -12,16 +27,14 @@
     /* Hello / Start */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.7);z-index:10}
     .hello-card{
-      position:relative; z-index:11;
-      background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;
-      box-shadow:0 8px 20px rgba(0,0,0,.2);overflow:visible
+      position:relative; z-index:11; background:#fff;border-radius:20px;padding:24px;text-align:center;max-width:420px;
+      box-shadow:0 8px 20px rgba(0,0,0,.2)
     }
     .hello-card img{display:block;width:140px;height:auto;object-fit:contain;margin:0 auto}
     .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
     .hello-card p{margin:4px 0;font-size:13px;color:#444}
     .hello-card button{
-      margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;
-      background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;
+      margin-top:16px;padding:12px 20px;font-size:18px;font-weight:bold;background:#ff4da6;color:#fff;border:0;border-radius:14px;cursor:pointer;
       box-shadow:0 10px 18px rgba(255,77,166,.28)
     }
     .hello-card button:active{transform:scale(.98)}
@@ -35,73 +48,47 @@
 
     /* Letter screen */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;text-align:center;gap:16px}
-    .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh;background:transparent;border:0;padding:0;box-shadow:none}
-    .card-wrap img{max-width:100%;max-height:70vh;width:auto;height:auto;object-fit:contain;border-radius:12px}
+    .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh;background:transparent}
+    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px}
 
-    /* Play buttons */
+    /* Buttons */
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
-    .btn-audio{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-      border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;
-      box-shadow:0 10px 18px rgba(0,0,0,.20);transition: transform .15s ease, background-color .12s ease;
-    }
+    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .15s, background-color .12s}
     .btn-audio:active{transform:scale(.92)}
-    .btn-audio.pressed{background:#7c5cff!important;color:#fff}
-    .btn-audio .num{font-size:26px;line-height:1}
+    .btn-audio.pressed{background:#7c5cff!important}
+    .btn-audio .num{font-size:26px}
     .btn-audio small{font-weight:700;font-size:12px;opacity:.95}
-    .btn1{background:#ff5959}
-    .btn2{background:#06b6d4}
-    .btn3{background:#ffd166;color:#111}
-    .btn4{background:#7c5cff}
+    .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio[disabled]{opacity:.65;cursor:default}
 
-    .btn-finish{
-      margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;
-      font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;
-      box-shadow:0 10px 18px rgba(0,0,0,.18);
-    }
-    .btn-finish:active{transform:scale(.92)}
-    .btn-finish.pressed{background:#7c5cff}
+    .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
+    .btn-finish:active{transform:scale(.92)} .btn-finish.pressed{background:#7c5cff}
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
     /* Dev controls */
-    .test-controls{
-      position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60;
-    }
-    .test-controls .tbtn{
-      background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer;
-    }
-    .test-controls .tbtn:active{transform:scale(.98)}
+    .test-controls{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
+    .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
+    .tbtn:active{transform:scale(.98)}
 
-    /* === POP QUIZ (simple 4-card B-cue) === */
+    /* Pop Quiz */
     #popQuiz{position:fixed;inset:0;z-index:85;display:none}
     #popQuiz.active{display:block}
     #popQuiz .pq-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
-    #popQuiz .pq-card{
-      position:relative;z-index:86;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.25)
-    }
+    #popQuiz .pq-card{position:relative;z-index:86;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
     .pq-title{margin:6px 0 2px;font-size:24px}
     .pq-prompt{margin:4px 0 12px;color:#444}
     .pq-controls{display:flex;align-items:center;gap:10px;margin-bottom:10px}
     .pq-hint{color:#555;font-size:14px}
     .pq-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .pq-item{
-      background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;
-      transition:transform .1s, border-color .12s
-    }
+    .pq-item{background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;transition:transform .1s, border-color .12s}
     .pq-item img{width:100%;height:170px;object-fit:contain}
     .pq-item:active{transform:scale(.98)}
-    .pq-item.correct{border-color:#22c55e}
-    .pq-item.wrong{border-color:#ef4444}
+    .pq-item.correct{border-color:#22c55e}.pq-item.wrong{border-color:#ef4444}
     .pq-bottom{display:flex;justify-content:center;margin-top:12px}
     .pq-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
     .pq-ok{background:#28a745}
-    @media (max-width:820px){
-      .pq-grid{grid-template-columns:repeat(2,1fr)}
-      .pq-item img{height:140px}
-    }
+    @media (max-width:820px){.pq-grid{grid-template-columns:repeat(2,1fr)}.pq-item img{height:140px}}
   </style>
 </head>
 <body>
@@ -115,7 +102,7 @@
       <h1>こんにちは！</h1>
       <p>スタートすると、毎日１つの文字が解放されます。</p>
       <p>進捗を守るため、同じ端末をご使用ください。</p>
-      <!-- inline onclick as hard fallback -->
+      <!-- inline onclick uses EARLY fallback; full script will override -->
       <button id="startBtn" type="button" onclick="startApp()">スタート</button>
     </div>
   </div>
@@ -128,17 +115,13 @@
 
   <!-- Letter of the day -->
   <div class="letter-screen">
-    <div class="card-wrap">
-      <img id="cardImg" src="./1.jpg" alt="カード1" />
-    </div>
-
+    <div class="card-wrap"><img id="cardImg" src="./1.jpg" alt="カード1" /></div>
     <div class="buttons">
       <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
       <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
       <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
-
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
@@ -156,7 +139,7 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- === POP QUIZ (simple 4-card B-cue) === -->
+  <!-- Pop Quiz -->
   <div id="popQuiz" style="display:none">
     <div class="pq-backdrop"></div>
     <div class="pq-card">
@@ -171,14 +154,8 @@
     </div>
   </div>
 
+  <!-- MAIN SCRIPT -->
   <script>
-    // ---- safety net ----
-    (function trap(){
-      const og = console.error.bind(console);
-      window.addEventListener('error', e => { try{ og('JS error:', e.message); }catch{} }, {capture:true});
-      window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
-    })();
-
     // ===== CONFIG =====
     const DEMO_MODE = true; // set false for production daily unlock
     const MS_DAY = 24*60*60*1000;
@@ -209,40 +186,31 @@
 
     // App state
     let activeIndex = 0;     // 0=A, 1=B, ...
-    let audioStep = 0;       // 0..4 for buttons 1..4
+    let audioStep = 0;       // 0..4
     let confettiRunning = false;
     let doneSet = loadDoneSet();
-    const MAX_LETTER_INDEX_FOR_CARDS = 7;  // A–H mapped (1..32.jpg)
+    const MAX_LETTER_INDEX_FOR_CARDS = 7;  // A–H (1..32.jpg)
 
-    // expose globally for inline onclick fallback
+    // UPGRADE the early fallback with full logic
     window.startApp = startApp;
-
     function startApp(){
       try { if(!startTs){ startTs = Date.now(); localStorage.setItem(LS_KEY_START, startTs); } } catch(_) {}
       hello.style.display = "none";
       showLetter();
     }
-
-    // Also bind normally (works if JS executes fully)
+    // Also bind normally
     startBtn?.addEventListener('click', startApp);
-    // As a last-resort recovery: if overlay still visible after load, keep the button hot
-    document.addEventListener('DOMContentLoaded', ()=>{
-      if(hello && hello.style.display !== 'none'){
-        startBtn?.addEventListener('click', startApp);
-      }
+    // Health check: if overlay is still up shortly after load, rebind
+    window.addEventListener('load', ()=>{
+      setTimeout(()=>{ if(hello.style.display !== 'none'){ startBtn?.addEventListener('click', startApp);} }, 200);
     });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && hello.style.display!=='none') startApp(); });
 
     function loadDoneSet(){
-      try {
-        const raw = localStorage.getItem(LS_KEY_DONE);
-        const arr = raw ? JSON.parse(raw) : [];
-        return new Set(arr);
-      } catch { return new Set(); }
+      try { const raw = localStorage.getItem(LS_KEY_DONE); const arr = raw ? JSON.parse(raw) : []; return new Set(arr); }
+      catch { return new Set(); }
     }
-    function saveDoneSet(){
-      try { localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); } catch {}
-    }
+    function saveDoneSet(){ try { localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); } catch {} }
 
     function getUnlockedCount(){
       if (DEMO_MODE) return MAX_LETTER_INDEX_FOR_CARDS + 1; // A–H unlocked
@@ -300,7 +268,6 @@
       }
       barFill.style.width = (unlocked/26*100) + "%";
       countdown.textContent = DEMO_MODE ? "デモ" : (nextUnlockMs() === 0 ? "すべて解放" : fmt(nextUnlockMs()));
-
       setCard(1);
 
       const L = letters[activeIndex];
@@ -315,7 +282,7 @@
       }
     }
 
-    // Buttons 1–4
+    // Buttons
     btn1.onclick = () => { flashPressed(btn1);
       if(audioStep>0 && audioStep<4) return;
       setCard(1); playAudioFor(1);
@@ -369,32 +336,22 @@
     /* ---------- Confetti ---------- */
     const canvas = document.getElementById("confetti");
     const ctx = canvas.getContext("2d");
-    let confetti = [], confettiRunning=false;
+    let confetti = [];
     function startConfetti(duration){
       if(confettiRunning) return;
       confettiRunning = true;
       try { magicAudio.currentTime = 0; magicAudio.play().catch(()=>{}); } catch(e) {}
       resize();
       confetti = Array.from({length:240}).map(()=>({
-        x: Math.random()*canvas.width,
-        y: Math.random()*canvas.height - canvas.height,
-        r: Math.random()*8 + 3,
-        d: Math.random()*1 + 0.5,
-        color: `hsl(${Math.random()*360},100%,50%)`
+        x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
+        r: Math.random()*8 + 3, d: Math.random()*1 + 0.5, color: `hsl(${Math.random()*360},100%,50%)`
       }));
       const end = Date.now() + duration;
       (function draw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
-        confetti.forEach(p=>{
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
-          ctx.fillStyle = p.color; ctx.fill();
-        });
-        confetti.forEach(p=>{
-          p.y += p.d*4;
-          if(p.y>canvas.height){ p.y = -10; p.x = Math.random()*canvas.width; }
-        });
-        if(Date.now() < end){ requestAnimationFrame(draw); }
-        else { confettiRunning = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+        confetti.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,2*Math.PI); ctx.fillStyle = p.color; ctx.fill(); });
+        confetti.forEach(p=>{ p.y += p.d*4; if(p.y>canvas.height){ p.y = -10; p.x = Math.random()*canvas.width; }});
+        if(Date.now() < end){ requestAnimationFrame(draw); } else { confettiRunning = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
       })();
     }
     window.onresize = resize;
@@ -402,32 +359,11 @@
     resize();
 
     /* ===== DEV BUTTONS (A–H) ===== */
-    devBack.onclick = ()=>{
-      if(activeIndex > 0){
-        activeIndex--;
-        audioStep = 0;
-        finishBtn.style.display = "none";
-        showLetter({preserveIndex:true});
-      }
-    };
-    devNext.onclick = ()=>{
-      if(activeIndex < MAX_LETTER_INDEX_FOR_CARDS){
-        activeIndex++;
-        audioStep = 0;
-        finishBtn.style.display = "none";
-        showLetter({preserveIndex:true});
-      }
-    };
-    devReset.onclick = ()=>{
-      try {
-        localStorage.removeItem(LS_KEY_START);
-        localStorage.removeItem(LS_KEY_DONE);
-      } finally {
-        location.reload();
-      }
-    };
+    devBack.onclick = ()=>{ if(activeIndex>0){ activeIndex--; audioStep=0; finishBtn.style.display='none'; showLetter({preserveIndex:true}); } };
+    devNext.onclick = ()=>{ if(activeIndex<MAX_LETTER_INDEX_FOR_CARDS){ activeIndex++; audioStep=0; finishBtn.style.display='none'; showLetter({preserveIndex:true}); } };
+    devReset.onclick = ()=>{ try{ localStorage.removeItem(LS_KEY_START); localStorage.removeItem(LS_KEY_DONE); } finally { location.reload(); } };
 
-    /* ===== POP QUIZ: 4 cards (1,5,9,13) with B.m4a cue; correct is 5.jpg ===== */
+    /* ===== POP QUIZ: 4 cards (1,5,9,13) cue B.m4a; correct is 5.jpg ===== */
     (function(){
       const popQuiz = document.getElementById('popQuiz');
       const pqGrid  = document.getElementById('pqGrid');
@@ -435,11 +371,11 @@
       const pqClose = document.getElementById('pqClose');
       const openPQ  = document.getElementById('openPQ');
 
-      const imageSrcs = ['./1.jpg','./5.jpg','./9.jpg','./13.jpg']; // A,B,C,D (first cards)
-      const correctSrc = './5.jpg';      // B-card is correct
+      const imageSrcs = ['./1.jpg','./5.jpg','./9.jpg','./13.jpg']; // A,B,C,D
+      const correctSrc = './5.jpg';
       const cueSrc = 'assets/audio/B.m4a';
 
-      function shuffle(arr){ return arr.sort(()=>Math.random()-0.5); }
+      function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
       function openQuiz(){
         if(!popQuiz) return;
@@ -452,32 +388,23 @@
           const img = document.createElement('img');
           img.src = src; img.alt = 'えらぶカード';
           btn.appendChild(img);
-
           btn.onclick = ()=>{
-            const isCorrect = (src === correctSrc);
-            btn.classList.add(isCorrect ? 'correct' : 'wrong');
-            if(isCorrect){
-              try{
-                const ok = document.getElementById('magicAudio');
-                if(ok){ ok.currentTime=0; ok.play().catch(()=>{}); }
-              }catch(e){}
+            const ok = (src === correctSrc);
+            btn.classList.add(ok ? 'correct' : 'wrong');
+            if(ok){
+              try{ const m=document.getElementById('magicAudio'); if(m){ m.currentTime=0; m.play().catch(()=>{});} }catch(e){}
               [...pqGrid.querySelectorAll('.pq-item')].forEach(b=>b.disabled=true);
               pqClose.style.display = 'inline-block';
             }else{
               setTimeout(()=> btn.classList.remove('wrong'), 380);
             }
           };
-
           pqGrid.appendChild(btn);
         });
 
-        pqPlay.onclick = ()=>{ const a = new Audio(cueSrc); a.play().catch(()=>{}); };
-
+        pqPlay.onclick = ()=>{ new Audio(cueSrc).play().catch(()=>{}); };
         pqClose.onclick = ()=> popQuiz.classList.remove('active');
-        const closeOnBackdrop = (e)=>{
-          if(e.target.classList.contains('pq-backdrop')) popQuiz.classList.remove('active');
-          popQuiz.removeEventListener('click', closeOnBackdrop);
-        };
+        const closeOnBackdrop=(e)=>{ if(e.target.classList.contains('pq-backdrop')) popQuiz.classList.remove('active'); popQuiz.removeEventListener('click', closeOnBackdrop); };
         popQuiz.addEventListener('click', closeOnBackdrop);
 
         popQuiz.classList.add('active');
@@ -488,7 +415,7 @@
       window.openLetterTapQuiz_B = openQuiz;
     })();
 
-    // Auto-hide hello if already started (e.g., existing localStorage)
+    // If already started, hide overlay on load
     if(startTs){ hello.style.display="none"; showLetter(); }
   </script>
 </body>
