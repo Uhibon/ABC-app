@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ブーハABC</title>
 
-  <!-- EARLY fallback so Start works even if later JS errors -->
+  <!-- EARLY fallback so the Start button always works -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
@@ -13,7 +13,7 @@
       const img = document.getElementById('cardImg');
       if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
     }
-    window.startApp = startApp;
+    window.startApp = startApp; // keep global for inline onclick
   </script>
 
   <style>
@@ -37,8 +37,6 @@
     .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
     .where{font-weight:800}
-    .chip{border:0;border-radius:14px;padding:8px 12px;font-weight:800;cursor:pointer;background:#111;color:#fff}
-    .chip:active{transform:scale(.98)}
 
     /* Letter screen */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;gap:16px;text-align:center}
@@ -46,19 +44,30 @@
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
-    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20)}
+    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s ease, filter .12s ease, background .12s ease}
     .btn-audio .num{font-size:26px}
-    .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
-    .btn-audio:active{transform:scale(.92)}
+    .btn1{background:#ff5959}
+    .btn2{background:#06b6d4}
+    .btn3{background:#ffd166;color:#111}
+    .btn4{background:#7c5cff}
+    .btn-audio:active{transform:scale(.94)}
+    /* AFTER-CLICK COLOR CHANGE */
+    .btn1.done{background:#ff7a7a}
+    .btn2.done{background:#16c1de}
+    .btn3.done{background:#ffe08c;color:#111}
+    .btn4.done{background:#9a86ff}
+    /* optional tiny check flair */
+    .btn-audio.done::after{content:"✓"; font-weight:900; font-size:14px; margin-left:6px}
+
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
-    .btn-finish:active{transform:scale(.92)}
+    .btn-finish:active{transform:scale(.96)}
 
     /* Dev row (optional) */
     .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
     .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
     .tbtn:active{transform:scale(.98)}
 
-    /* Confetti/Fireworks */
+    /* Fireworks */
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
     /* === TEST PAGE (modal) === */
@@ -87,24 +96,22 @@
   <div class="bg"></div>
   <div class="overlay"></div>
 
-  <!-- Hello -->
+  <!-- Start / Hello -->
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>こんにちは！</h1>
-      <p>スタートすると、A〜Hのカードとテストで練習できます。</p>
-      <p>5つの文字が終わるごとにテストが出ます。</p>
+      <p>A〜Hのカードで練習しましょう。5つの文字が終わるごとにテストが出ます。</p>
       <button id="startBtn" type="button" onclick="startApp()">スタート</button>
     </div>
   </div>
 
-  <!-- Top bar -->
+  <!-- Top bar (no テスト button) -->
   <div class="topbar">
     <div class="left">
       <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
       <div id="where" class="where" aria-live="polite">A / 4枚</div>
     </div>
-    <button id="manualTest" class="chip">テスト</button>
   </div>
 
   <!-- Letter screen -->
@@ -136,8 +143,8 @@
   <div id="test" style="display:none">
     <div class="t-back"></div>
     <div class="t-card">
-      <h2 class="t-title" id="tTitle">テスト</h2>
-      <p class="t-prompt" id="tPrompt">音声を聞いて、正しいカードをえらぼう！</p>
+      <h2 class="t-title">テスト</h2>
+      <p class="t-prompt">音声を聞いて、正しいカードをえらぼう！</p>
       <div class="t-ctrl">
         <button id="tPlay" class="t-btn">▶︎ 再生</button>
         <span id="tHint" class="t-hint"></span>
@@ -163,8 +170,8 @@
     const MAX_IDX = 7; // A..H mapped -> 1..32.jpg
 
     // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";        // stores array of finished letters (unique)
-    const LS_KEY_LAST_TEST = "abc_last_test_m";    // last milestone tested (integer count of groups of 5)
+    const LS_KEY_DONE = "abc_done_letters";        // unique finished letters (array)
+    const LS_KEY_LAST_TEST = "abc_last_test_m";    // last milestone group triggered (0,1,2,...)
 
     // DOM
     const hello = document.getElementById("hello");
@@ -178,8 +185,8 @@
     const finishBtn = document.getElementById("finishBtn");
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
-    const manualTest = document.getElementById("manualTest");
 
+    // Dev helpers
     const prev = document.getElementById("prev");
     const next = document.getElementById("next");
     const reset = document.getElementById("reset");
@@ -230,21 +237,18 @@
       where.textContent = `${letters[letterIdx]} / 4枚`;
     }
 
-    /* ---------- Start ---------- */
-    function startApp(){ // upgrades fallback
-      hello.style.display = "none";
+    /* ---------- Start (upgrade fallback) ---------- */
+    function startAppFull(){
+      startApp(); // hide overlay via fallback
       letterIdx = Math.max(0, Math.min(letterIdx, MAX_IDX));
       step = 0;
+      setButtonColorsReset();
       showCard(1);
       updateTop();
     }
-    window.startApp = startApp;
-    document.getElementById('startBtn')?.addEventListener('click', startApp);
-    window.addEventListener('load', ()=>{
-      if(hello.style.display !== 'none'){
-        document.getElementById('startBtn')?.addEventListener('click', startApp);
-      }
-    });
+    // upgrade the global
+    window.startApp = startAppFull;
+    document.getElementById('startBtn')?.addEventListener('click', startAppFull);
 
     /* ---------- Audio ---------- */
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
@@ -260,11 +264,17 @@
       new Audio(`assets/audio/${L}.m4a`).play().catch(()=>{});
     }
 
-    /* ---------- Buttons 1..4 ---------- */
-    btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); step = 1; };
-    btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); step = 2; };
-    btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); step = 3; };
-    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); step = 4; finishBtn.style.display='inline-block'; };
+    /* ---------- Button color helpers ---------- */
+    function setButtonColorsReset(){
+      [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done'));
+    }
+    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
+
+    /* ---------- Buttons 1..4 (also color-change) ---------- */
+    btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); step = 1; markBtnDone(btn1); };
+    btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); step = 2; markBtnDone(btn2); };
+    btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); step = 3; markBtnDone(btn3); };
+    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); step = 4; markBtnDone(btn4); finishBtn.style.display='inline-block'; };
 
     /* ---------- Finish current letter ---------- */
     finishBtn.onclick = ()=>{
@@ -275,29 +285,29 @@
         doneSet.add(L);
         saveDoneSet();
       }
-      // Reward + advance
+      // Reward
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(2000);
       finishBtn.style.display='none';
       step = 0;
       // Auto-advance
       letterIdx = Math.min(MAX_IDX, letterIdx+1);
+      setButtonColorsReset();
       showCard(1);
       updateTop();
 
-      // ---- Test trigger: after every 5 unique letters ----
-      const completed = doneSet.size;
-      const milestone = Math.floor(completed/5);  // 0->4=0, 5->9=1, 10->14=2, ...
-      if(completed>0 && completed % 5 === 0 && milestone > lastMilestoneDone){
-        lastMilestoneDone = milestone;
-        saveLastMilestone(milestone);
-        openTest(); // pops immediately
+      // ---- Test trigger: after EVERY 5 UNIQUE letters ----
+      const groupsDone = Math.floor(doneSet.size / 5); // 0->4=0, 5->9=1, etc.
+      if(doneSet.size>0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
+        lastMilestoneDone = groupsDone;
+        saveLastMilestone(groupsDone);
+        openTest(); // show test immediately
       }
     };
 
     /* ---------- Dev nav ---------- */
-    prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); step=0; finishBtn.style.display='none'; showCard(1); updateTop(); };
-    next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); step=0; finishBtn.style.display='none'; showCard(1); updateTop(); };
+    prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); step=0; finishBtn.style.display='none'; setButtonColorsReset(); showCard(1); updateTop(); };
+    next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); step=0; finishBtn.style.display='none'; setButtonColorsReset(); showCard(1); updateTop(); };
     reset.onclick = ()=>{
       try{ localStorage.removeItem(LS_KEY_DONE); localStorage.removeItem(LS_KEY_LAST_TEST);} finally{ location.reload(); }
     };
@@ -309,7 +319,7 @@
       if(confettiRunning) return;
       confettiRunning = true;
       resize();
-      const pieces = Array.from({length:240}).map(()=>({
+      const pieces = Array.from({length:260}).map(()=>({
         x: Math.random()*canvas.width,
         y: Math.random()*canvas.height - canvas.height,
         r: Math.random()*8+3,
@@ -332,16 +342,12 @@
     resize();
 
     /* ---------- TEST PAGE LOGIC ---------- */
-    manualTest.addEventListener('click', openTest);
+    function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
     function openTest(){
-      // Build a pool from completed letters; if fewer than 4, fallback to A–H
-      const completedIdxs = [...doneSet]
-        .map(L => letters.indexOf(L))
-        .filter(i => i>=0 && i<=MAX_IDX);
-
-      let pool = completedIdxs.length >= 4 ? completedIdxs : Array.from({length:MAX_IDX+1}, (_,i)=>i);
-      // pick 4 distinct
+      // Pool: prefer COMPLETED unique letters; if <4, fallback to A–H
+      let pool = [...doneSet].map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
+      if(pool.length < 4) pool = Array.from({length:MAX_IDX+1}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
 
@@ -361,7 +367,7 @@
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
             // lock all items
             [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
-            startFireworks(2000); // 2 sec
+            startFireworks(2000); // 2 sec fireworks
             tClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
@@ -370,13 +376,13 @@
         tGrid.appendChild(btn);
       }
 
-      // Play button for the cue
+      // One audio button plays the correct cue
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
 
       // UI bits
       tHint.textContent = '';
       tClose.style.display = 'none';
-      tProgress.textContent = '1 / 1'; // single question per test (expandable)
+      tProgress.textContent = '1 / 1'; // single question per test (spec)
       test.classList.add('active');
 
       // Auto play once on open
@@ -389,11 +395,6 @@
     }
 
     function closeTest(){ test.classList.remove('active'); }
-
-    function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
-
-    // Initialize view
-    startApp();
   </script>
 </body>
 </html>
