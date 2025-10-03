@@ -51,16 +51,16 @@
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
     .where{font-weight:800;min-width:3ch}
 
-    /* Lock meter (cute) */
-    .lockbox{display:flex;flex-direction:column;gap:6px;min-width:220px}
+    /* Lock meter (wider + bigger ghost) */
+    .lockbox{display:flex;flex-direction:column;gap:6px;min-width:320px}
     .lockline{font-size:12px;color:#444;display:flex;align-items:center;gap:6px}
-    .lockmeter{position:relative;height:14px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); overflow:hidden}
+    .lockmeter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); overflow:hidden}
     .lockmeter i{position:absolute;left:0;top:0;height:100%;width:0%;
       background:repeating-linear-gradient(45deg, #ffd1e6 0 10px, #ffe6f1 10px 20px);
       transition:width .6s}
     .lock-ghost{
       position:absolute;top:-10px;transform:translateX(-50%);
-      width:22px;height:22px; /* PNG as the marker */
+      width:26px;height:26px; /* bigger PNG marker */
       background:url('./playful-pink-booha.png') center/contain no-repeat;
       transition:left .6s
     }
@@ -93,7 +93,8 @@
 
     /* Fireworks canvases */
     canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
-    canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:51}
+    /* raise above the test modal */
+    canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
 
     /* === TEST PAGE (modal) === */
     #test{position:fixed;inset:0;z-index:80;display:none}
@@ -344,11 +345,15 @@
     }
 
     function now(){ return Date.now(); }
-    function msToHM(ms){
-      if (ms <= 0) return "0時間0分";
-      const h = Math.floor(ms/3600000);
-      const m = Math.floor((ms%3600000)/60000);
-      return `${h}時間${m}分`;
+
+    // hh:mm:ss for the countdown
+    function msToHMS(ms){
+      if (ms <= 0) return "0時間0分0秒";
+      const s = Math.floor(ms / 1000);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${h}時間${m}分${sec}秒`;
     }
 
     function updateLockUI(){
@@ -365,7 +370,7 @@
         lockFill.style.width = (pct*100).toFixed(1) + '%';
         lockGhost.style.left = (pct*100).toFixed(1) + '%';
         if (remaining > 0){
-          lockStatus.textContent = `🔒 次の文字は ${msToHM(remaining)} 後にアンロック`;
+          lockStatus.textContent = `🔒 次の文字は ${msToHMS(remaining)} 後にアンロック`;
         }else{
           lockStatus.textContent = `🆕 新しい文字がアンロックされました`;
         }
@@ -532,10 +537,11 @@
     };
     document.getElementById("ctrlTest").onclick = ()=> openTest();
 
-  /* ---------- Quiz confetti: multi-blast rainbow (6s) ---------- */
-function startQuizConfetti(duration = 6000){
+  /* ---------- Quiz confetti: multi-blast rainbow (8s) ---------- */
+function startQuizConfetti(duration = 8000){
   const cQuiz = document.getElementById("confettiQuiz");
   const xQuiz = cQuiz.getContext("2d");
+  cQuiz.style.zIndex = '200'; // ensure on top
   function resize(){ cQuiz.width = innerWidth; cQuiz.height = innerHeight; }
   resize(); window.addEventListener('resize', resize, {once:true});
 
@@ -616,6 +622,27 @@ function startQuizConfetti(duration = 6000){
   })();
 }
 
+function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
+  let rot = Math.PI / 2 * 3;
+  let cx = x, cy = y;
+  let step = Math.PI / spikes;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - outerRadius);
+  for (let i = 0; i < spikes; i++) {
+    cx = x + Math.cos(rot) * outerRadius;
+    cy = y + Math.sin(rot) * outerRadius;
+    ctx.lineTo(cx, cy);
+    rot += step;
+
+    cx = x + Math.cos(rot) * innerRadius;
+    cy = y + Math.sin(rot) * innerRadius;
+    ctx.lineTo(cx, cy);
+    rot += step;
+  }
+  ctx.lineTo(x, y - outerRadius);
+  ctx.closePath();
+}
+
 
     /* ---------- TEST PAGE LOGIC (single-letter images, shuffled answers) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
@@ -643,10 +670,10 @@ function startQuizConfetti(duration = 6000){
           const ok = idx === correctIdx;
           btn.classList.add(ok?'correct':'wrong');
           if(ok){
-            // QUIZ: cheer sound + short confetti blast (0.6s)
+            // QUIZ: cheer + long multi-burst confetti (on top)
             playSound('assets/sfx/cheer.mp3', 1.0);
             [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
-            startQuizConfetti(6000);
+            startQuizConfetti(8000);
             tClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
