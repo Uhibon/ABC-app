@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ブーハABC</title>
+  <title>ブーハABC – スターター</title>
 
-  <!-- EARLY fallback: minimal start for safety -->
+  <!-- Minimal early fallback -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
       if (hello) hello.style.display = 'none';
-      const img = document.getElementById('cardImg');
-      if (img) { img.src = './1.jpg'; img.alt = 'カード1'; }
+      const img = document.getElementById('letterImg');
+      if (img) { img.src = './1.jpg'; img.alt = 'レター画像'; }
     }
     window.startApp = startApp;
   </script>
@@ -25,11 +25,11 @@
     #go:target ~ #hello{display:none}
 
     /* Hello / Start */
-    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.75);z-index:10}
-    .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:420px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
+    .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
-    .hello-card h1{margin:12px 0 6px;font-size:27px;line-height:1.05}
-    .hello-card p{margin:4px 0;font-size:13px;color:#444}
+    .hello-card h1{margin:12px 0 6px;font-size:24px;line-height:1.2}
+    .hello-card p{margin:8px 0;font-size:14px;color:#444}
     .start-link{
       display:inline-block;margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;text-decoration:none;
       background:#ff4da6;color:#fff;border-radius:14px;box-shadow:0 10px 18px rgba(255,77,166,.28);cursor:pointer
@@ -38,14 +38,15 @@
 
     /* Top bar */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
-    .left{display:flex;align-items:center;gap:10px}
-    .progress{width:160px}
+    .left{display:flex;align-items:center;gap:12px}
+    .progress{width:180px}
     .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
-    .where{font-weight:800}
+    .where{font-weight:800;min-width:3ch}
+    .lockmsg{font-size:12px;color:#444}
 
     /* Letter screen */
-    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 80px);padding:16px;gap:16px;text-align:center}
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 88px);padding:16px;gap:16px;text-align:center}
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
@@ -105,9 +106,9 @@
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
-      <h1>こんにちは！</h1>
-      <p>A〜Hのカードで練習。5つの<strong>文字</strong>が終わるごとにテストが出ます。</p>
-      <!-- single Start button (works with/without JS) -->
+      <h1>スターターアプリへようこそ！</h1>
+      <p>このアプリをホーム画面に追加してください。</p>
+      <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
       <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
     </div>
   </div>
@@ -116,13 +117,14 @@
   <div class="topbar">
     <div class="left">
       <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
-      <div id="where" class="where" aria-live="polite">A / 4枚</div>
+      <div id="where" class="where" aria-live="polite">A</div>
     </div>
+    <div id="lockMsg" class="lockmsg"></div>
   </div>
 
   <!-- Letter screen -->
   <div class="letter-screen">
-    <div class="card-wrap"><img id="cardImg" src="./1.jpg" alt="カード1" /></div>
+    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
     <div class="buttons">
       <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
@@ -134,8 +136,8 @@
 
   <!-- Dev helpers (optional) -->
   <div class="dev">
-    <button id="prev" class="tbtn">← letter</button>
-    <button id="next" class="tbtn">letter →</button>
+    <button id="prev" class="tbtn">←</button>
+    <button id="next" class="tbtn">→</button>
     <button id="reset" class="tbtn">reset</button>
   </div>
 
@@ -150,7 +152,7 @@
     <div class="t-back"></div>
     <div class="t-card">
       <h2 class="t-title">テスト</h2>
-      <p class="t-prompt">音声を聞いて、正しいカードをえらぼう！</p>
+      <p class="t-prompt">音声を聞いて、正しい<strong>文字</strong>をえらぼう！</p>
       <div class="t-ctrl">
         <button id="tPlay" class="t-btn">▶︎ 再生</button>
         <span id="tHint" class="t-hint"></span>
@@ -187,23 +189,26 @@
         activeAudio.play().catch(()=>{});
       }catch(e){}
     }
-    // stop any playing audio when leaving page
+    // stop audio on page hide
     window.addEventListener('pagehide', stopActive);
     window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const MAX_IDX = 7; // A..H mapped -> 1..32.jpg
+    const MAX_IDX = 14; // A..O
+    const TOTAL_LETTERS = MAX_IDX + 1;
 
     // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";     // array of finished letter chars
-    const LS_KEY_LAST_TEST = "abc_last_test_m"; // last milestone group triggered (0,1,2,...)
+    const LS_KEY_DONE = "abc_done_letters";      // ordered array of finished letters (["A","B",...])
+    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group (0,1,2,...)
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked letter index (0-based)
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // timestamp ms when next letter unlocks (0 if none scheduled)
 
     // DOM
     const hello = document.getElementById("hello");
     const barFill = document.getElementById("barFill");
     const where = document.getElementById("where");
-    const cardImg = document.getElementById("cardImg");
+    const letterImg = document.getElementById("letterImg");
     const btn1 = document.getElementById("btn1");
     const btn2 = document.getElementById("btn2");
     const btn3 = document.getElementById("btn3");
@@ -211,6 +216,7 @@
     const finishBtn = document.getElementById("finishBtn");
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
+    const lockMsg = document.getElementById("lockMsg");
 
     // Dev
     const prev = document.getElementById("prev");
@@ -227,57 +233,87 @@
 
     /* ---------- App state ---------- */
     let letterIdx = 0; // 0=A
-    let doneSet = loadDoneSet();
-    let lastMilestoneDone = loadLastMilestone();
+    let doneList = loadDoneList();                 // ordered list
+    let doneSet = new Set(doneList);               // fast lookup
+    let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
+    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);             // A unlocked by default
+    let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
 
     /* ---------- Helpers ---------- */
-    function loadDoneSet(){
-      try{ const raw = localStorage.getItem(LS_KEY_DONE); return new Set(raw?JSON.parse(raw):[]); }
-      catch{ return new Set(); }
+    function loadDoneList(){
+      try{
+        const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]");
+        return Array.isArray(raw) ? raw : [];
+      }catch{ return []; }
     }
-    function saveDoneSet(){
-      try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify([...doneSet])); }catch{}
+    function saveDone(){
+      try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{}
     }
-    function loadLastMilestone(){
-      const n = Number(localStorage.getItem(LS_KEY_LAST_TEST)||0);
-      return Number.isFinite(n)?n:0;
+    function loadNumber(key, def){
+      const n = Number(localStorage.getItem(key) ?? def);
+      return Number.isFinite(n) ? n : def;
     }
-    function saveLastMilestone(n){
-      try{ localStorage.setItem(LS_KEY_LAST_TEST, String(n)); }catch{}
+    function saveNumber(key, val){
+      try{ localStorage.setItem(key, String(val)); }catch{}
     }
 
     function getCardBase(i){ return i*4; }
-    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; }
+    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; } // 1,5,9,...
 
     function showCard(n){
       const base = getCardBase(Math.min(letterIdx, MAX_IDX));
       const num = base + n; // 1..4
-      cardImg.src = `./${num}.jpg`;
-      cardImg.alt = `カード${n}`;
+      letterImg.src = `./${num}.jpg`;
+      letterImg.alt = `レター画像`;
     }
+
     function updateTop(){
-      const progress = (doneSet.size/26)*100;
+      const progress = (doneSet.size / TOTAL_LETTERS) * 100;
       barFill.style.width = progress + "%";
-      where.textContent = `${letters[letterIdx]} / 4枚`;
+      where.textContent = `${letters[letterIdx]}`;
+      updateLockMsg();
     }
 
-    /* ---------- Start (JS version) ---------- */
-    function startAppFull(){
-      startApp(); // hide overlay via early fallback
-      letterIdx = Math.max(0, Math.min(letterIdx, MAX_IDX));
-      setButtonColorsReset();
-      showCard(1);
-      updateTop();
-
-      // ensure any leftover inline style can't block the modal (defensive)
-      if (test && test.style && test.style.display === 'none') test.style.removeProperty('display');
+    function now(){ return Date.now(); }
+    function msToHM(ms){
+      if (ms <= 0) return "";
+      const h = Math.floor(ms/3600000);
+      const m = Math.floor((ms%3600000)/60000);
+      return `${h}時間${m}分`;
     }
-    window.startAppFull = startAppFull;
+    function updateLockMsg(){
+      if (unlockIdx >= MAX_IDX){
+        lockMsg.textContent = `全ての文字がアンロック済み`;
+        return;
+      }
+      if (nextUnlockMs > 0 && now() < nextUnlockMs){
+        lockMsg.textContent = `次の文字は ${msToHM(nextUnlockMs - now())} 後にアンロック`;
+      }else if (nextUnlockMs > 0 && now() >= nextUnlockMs){
+        lockMsg.textContent = `新しい文字がアンロックされました`;
+      }else{
+        lockMsg.textContent = ``;
+      }
+    }
 
-    // If loaded directly with #go, auto-start JS initialization
-    if(location.hash === '#go'){ startAppFull(); }
+    function refreshUnlocks(){
+      if (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
+        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX); // unlock next letter
+        nextUnlockMs = 0; // wait until current unlocked letter is finished to schedule next
+        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
+        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+        updateTop();
+      }
+    }
+    setInterval(refreshUnlocks, 30000); // light heartbeat
+    window.addEventListener('focus', refreshUnlocks);
 
-    /* ---------- Audio helpers (use manager) ---------- */
+    function clampToUnlocked(i){
+      return Math.max(0, Math.min(i, unlockIdx));
+    }
+
+    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
+    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
+
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
     function playLetterTimes(times){
       const L = letters[letterIdx];
@@ -291,11 +327,32 @@
       playSound(`assets/audio/${L}.m4a`);
     }
 
-    /* ---------- Button color helpers ---------- */
-    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
-    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
+    function firstUnfinishedUnlocked(){
+      for (let i=0;i<=unlockIdx;i++){
+        if (!doneSet.has(letters[i])) return i;
+      }
+      // all unlocked finished -> stay on latest unlocked
+      return unlockIdx;
+    }
 
-    /* ---------- Buttons 1..4 (color-change on click, non-overlapping audio) ---------- */
+    /* ---------- Start ---------- */
+    function startAppFull(){
+      startApp(); // hide overlay via early fallback
+      // defensive: remove any stray inline display:none on test
+      if (test && test.style && test.style.display === 'none') test.style.removeProperty('display');
+
+      refreshUnlocks();
+      letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
+      setButtonColorsReset();
+      showCard(1);
+      updateTop();
+    }
+    window.startAppFull = startAppFull;
+
+    // If loaded directly with #go, auto-start JS initialization
+    if(location.hash === '#go'){ startAppFull(); }
+
+    /* ---------- Buttons (no overlapping audio) ---------- */
     btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); markBtnDone(btn1); };
     btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); markBtnDone(btn2); };
     btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); markBtnDone(btn3); };
@@ -303,42 +360,65 @@
 
     /* ---------- Finish current letter ---------- */
     function maybeOpenTestAfterFinish(){
-      // Trigger after every 5 UNIQUE finished letters (5,10,15,20,25).
-      const groupsDone = Math.floor(doneSet.size / 5); // 0->4=0, 5->9=1, etc.
-      // Always trigger exactly at 5 as requested, and for later groups too.
+      // Trigger after every 5 unique finished letters: 5,10,15,...
+      const groupsDone = Math.floor(doneSet.size / 5); // 0->4=0, 5->9=1, …
       if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
         lastMilestoneDone = groupsDone;
-        saveLastMilestone(groupsDone);
-        openTest(); // show test immediately
+        localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
+        openTest(); // immediate
       }
     }
 
     finishBtn.onclick = ()=>{
       playClick();
-      // Mark letter as done (unique)
       const L = letters[letterIdx];
-      if(!doneSet.has(L)){ doneSet.add(L); saveDoneSet(); }
+      if(!doneSet.has(L)){
+        doneSet.add(L);
+        doneList.push(L);
+        saveDone();
+      }
 
-      // Reward + reset
+      // Reward
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(2000);
       finishBtn.style.display='none';
       setButtonColorsReset();
 
-      // Advance to next letter within A–H
-      letterIdx = Math.min(MAX_IDX, letterIdx+1);
+      // Schedule next unlock (24h) ONLY when finishing the current highest unlocked letter
+      if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
+        nextUnlockMs = now() + 24*60*60*1000;
+        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+      }
+
+      // Test (every 5th finish)
+      maybeOpenTestAfterFinish();
+
+      // Stay on current letter (review allowed). Next letter unlocks by timer.
       showCard(1);
       updateTop();
-
-      // ---- TEST trigger (5th, 10th, ...). Works for the 5th finished letter specifically.
-      maybeOpenTestAfterFinish();
     };
 
-    /* ---------- Dev nav ---------- */
-    prev.onclick = ()=>{ letterIdx = Math.max(0, letterIdx-1); setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop(); };
-    next.onclick = ()=>{ letterIdx = Math.min(MAX_IDX, letterIdx+1); setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop(); };
+    /* ---------- Dev nav (respect lock) ---------- */
+    prev.onclick = ()=>{
+      letterIdx = Math.max(0, letterIdx-1);
+      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
+    };
+    next.onclick = ()=>{
+      const nextIdx = letterIdx + 1;
+      if (nextIdx > unlockIdx){
+        updateLockMsg(); // just refresh message; movement blocked
+        return;
+      }
+      letterIdx = nextIdx;
+      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
+    };
     reset.onclick = ()=>{
-      try{ localStorage.removeItem(LS_KEY_DONE); localStorage.removeItem(LS_KEY_LAST_TEST);} finally{ location.reload(); }
+      try{
+        localStorage.removeItem(LS_KEY_DONE);
+        localStorage.removeItem(LS_KEY_LAST_TEST);
+        localStorage.removeItem(LS_KEY_UNLOCK_IDX);
+        localStorage.removeItem(LS_KEY_NEXT_UNLOCK);
+      } finally { location.reload(); }
     };
 
     /* ---------- Fireworks (2s confetti) ---------- */
@@ -366,33 +446,32 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ---------- TEST PAGE LOGIC ---------- */
+    /* ---------- TEST PAGE LOGIC (single-letter images) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
     function openTest(){
-      // Pool: prefer COMPLETED unique letters; if <4, fallback to A–H
-      let pool = [...doneSet].map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
-      if(pool.length < 4) pool = Array.from({length:MAX_IDX+1}, (_,i)=>i);
+      // Use the most recent 5 finished letters; show 4 options from those
+      const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
+      let pool = recent.length >= 4 ? recent : Array.from({length:Math.min(unlockIdx+1, MAX_IDX+1)}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
 
-      // Render grid
+      // Render grid with FIRST card only: 1,5,9,13,…
       tGrid.innerHTML = '';
       for(const idx of pool){
         const btn = document.createElement('button');
         btn.type='button'; btn.className='t-item';
         const img = document.createElement('img');
         img.src = firstCardSrc(idx);
-        img.alt = 'えらぶカード';
+        img.alt = 'えらぶレター';
         btn.appendChild(img);
         btn.onclick = ()=>{
           const ok = idx === correctIdx;
           btn.classList.add(ok?'correct':'wrong');
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-            // lock all items
             [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
-            startFireworks(2000); // 2 sec fireworks
+            startFireworks(2000);
             tClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
@@ -401,19 +480,17 @@
         tGrid.appendChild(btn);
       }
 
-      // One audio button plays the correct cue (no overlap)
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
 
-      // UI bits
       tHint.textContent = '';
       tClose.style.display = 'none';
-      tProgress.textContent = '1 / 1'; // one question per test
+      tProgress.textContent = '1 / 1';
       test.classList.add('active');
 
-      // Immediately play once (still within user gesture chain from Finish)
+      // immediate first play
       playLetterCueByIndex(correctIdx);
 
-      // Close handlers
+      // close
       const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
       test.addEventListener('click', backdropClose, {once:true});
       tClose.onclick = closeTest;
