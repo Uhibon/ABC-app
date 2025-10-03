@@ -2,14 +2,16 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ブーハABC – スターター</title>
 
-  <!-- App icon for desktop / home screen -->
+  <!-- App icon & PWA -->
   <link rel="icon" type="image/png" sizes="192x192" href="playful-pink-booha.png">
-  <link rel="apple-touch-icon" href="playful-pink-booha.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="playful-pink-booha.png">
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#ff4da6">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="ブーハABC">
 
   <!-- Minimal early fallback -->
@@ -24,7 +26,9 @@
   </script>
 
   <style>
+    :root{ --topbar-h: 112px; }
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    body{overflow-x:hidden; background:#fff}
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
@@ -32,7 +36,7 @@
     #go:target ~ #hello{display:none}
 
     /* Hello / Start */
-    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10;padding:16px}
     .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
     .hello-card h1{margin:12px 0 6px;font-size:24px;line-height:1.2}
@@ -43,45 +47,58 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar */
-    .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
-    .left{display:flex;align-items:center;gap:12px}
-    .progress{width:180px}
+    /* Top bar (mobile-safe) */
+    .topbar{
+      display:flex;align-items:center;gap:12px 14px;justify-content:space-between;
+      padding:10px 16px; flex-wrap:wrap;
+      background:rgba(255,255,255,.6); backdrop-filter:saturate(120%) blur(2px)
+    }
+    .left{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-width:180px}
+    .progress{width:220px; max-width:42vw}
     .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
     .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
     .where{font-weight:800;min-width:3ch}
 
-    /* Lock meter (wider + outside ghost + purple fill) */
-    .lockbox{display:flex;flex-direction:column;gap:6px;min-width:320px}
+    /* Lock meter (wider + OUTSIDE ghost + purple fill) */
+    .lockbox{display:flex;flex-direction:column;gap:6px;flex:1 1 280px;min-width:260px;max-width:680px}
     .lockline{font-size:12px;color:#444;display:flex;align-items:center;gap:6px;font-weight:700}
-    .lockmeter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);overflow:hidden}
+    .lockmeter{
+      position:relative;height:16px;border-radius:999px;
+      background:linear-gradient(90deg,#f1f5f9,#e2e8f0);
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+      overflow:visible; /* important: allow outside ghost to show */
+    }
     .lockmeter i{
       position:absolute;left:0;top:0;height:100%;width:0%;
       background:#7c3aed; /* purple fill */
       transition:width .6s
     }
     .lock-ghost{
-      position:absolute;top:-22px; /* sit OUTSIDE the meter */
-      transform:translateX(-50%);
+      position:absolute;top:-22px; /* sit OUTSIDE above the bar */
+      transform:translateX(-50%); left:0%;
       width:30px;height:30px;
       background:url('./playful-pink-booha.png') center/contain no-repeat;
       transition:left .6s;
-      pointer-events:none; /* non-interactive */
-      z-index:2;
+      pointer-events:none; z-index:2;
+      filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));
     }
     .lock-unlocked{color:#16a34a;font-weight:700}
 
-    /* Letter screen */
-    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 108px);padding:16px;gap:16px;text-align:center}
-    .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
-    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
+    /* Letter screen (use small viewport units for iOS) */
+    .letter-screen{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:calc(100svh - var(--topbar-h));
+      padding:16px;gap:16px;text-align:center;
+      padding-bottom:calc(16px + env(safe-area-inset-bottom));
+    }
+    .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:36vh}
+    .card-wrap img{max-width:100%;max-height:min(60svh, 560px);object-fit:contain;border-radius:12px}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
     .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s}
     .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    /* Color change after click */
     .btn1.done{background:#ff7a7a}
     .btn2.done{background:#16c1de}
     .btn3.done{background:#ffe08c;color:#111}
@@ -91,21 +108,22 @@
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
 
-    /* Dev row (reset removed earlier) */
-    .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
+    /* Dev row */
+    .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60;
+      padding-bottom:env(safe-area-inset-bottom)}
     .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
     .tbtn:active{transform:scale(.98)}
 
-    /* Fireworks canvases */
-    canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
-    /* raise above the test modal */
-    canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
+    /* Confetti canvases */
+    canvas#confettiFinish, canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none}
+    canvas#confettiFinish{z-index:50}
+    canvas#confettiQuiz{z-index:200}
 
-    /* === TEST PAGE (modal) === */
-    #test{position:fixed;inset:0;z-index:80;display:none}
+    /* TEST PAGE (modal) */
+    #test{position:fixed;inset:0;z-index:180;display:none}
     #test.active{display:block}
     .t-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
-    .t-card{position:relative;z-index:81;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+    .t-card{position:relative;z-index:181;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
     .t-title{margin:6px 0 2px;font-size:24px}
     .t-prompt{margin:4px 0 12px;color:#444}
     .t-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:10px}
@@ -119,11 +137,11 @@
     .t-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
     .t-ok{background:#28a745}
     .t-progress{font-weight:800}
-    .t-hint{display:none} /* hide “G の音” etc. */
+    .t-hint{display:none}
     @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
 
-    /* Floating tiny control panel */
-    .ctrl{position:fixed;right:10px;bottom:10px;z-index:70}
+    /* Tiny control panel */
+    .ctrl{position:fixed;right:10px;bottom:10px;z-index:170}
     .ctrl > .fab{width:42px;height:42px;border-radius:999px;border:0;background:#111;color:#fff;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.28)}
     .ctrl .panel{display:none;position:absolute;right:50px;bottom:0;background:#fff;border-radius:14px;padding:10px;box-shadow:0 14px 30px rgba(0,0,0,.25);min-width:190px}
     .ctrl.open .panel{display:block}
@@ -131,7 +149,15 @@
     .ctrl .panel button,.ctrl .panel label{font-size:12px}
     .ctrl .panel button{border:0;background:#f1f5f9;border-radius:10px;padding:6px 8px;cursor:pointer}
     .ctrl .panel button:active{transform:scale(.98)}
-    .ctrl .panel .toggle{display:flex;align-items:center;gap:6px}
+
+    /* Extra small phones tweaks */
+    @media (max-width:480px){
+      .progress{width:44vw}
+      .lockbox{flex-basis:100%}
+      .lockmeter{height:14px}
+      .lock-ghost{top:-20px;width:26px;height:26px}
+      .card-wrap img{max-height:min(56svh, 500px)}
+    }
   </style>
 </head>
 <body>
@@ -163,7 +189,7 @@
       <div class="lockline">
         <span id="lockStatus"><strong>次の文字は 24時間 後にアンロック</strong></span>
       </div>
-      <div class="lockmeter">
+      <div class="lockmeter" aria-label="24時間メーター">
         <i id="lockFill"></i>
         <span id="lockGhost" class="lock-ghost" style="left:0%"></span>
       </div>
@@ -182,7 +208,7 @@
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
-  <!-- Simple dev nav -->
+  <!-- Dev nav -->
   <div class="dev">
     <button id="prev" class="tbtn">←</button>
     <button id="next" class="tbtn">→</button>
@@ -192,11 +218,11 @@
   <canvas id="confettiFinish"></canvas>
   <canvas id="confettiQuiz"></canvas>
 
-  <!-- SFX (fallback elements; main playback uses WebAudio for gain) -->
+  <!-- SFX fallback elements -->
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- === TEST PAGE (modal) === -->
+  <!-- TEST PAGE (modal) -->
   <div id="test">
     <div class="t-back"></div>
     <div class="t-card">
@@ -274,10 +300,10 @@
     const TOTAL_LETTERS = MAX_IDX + 1;
 
     // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";      // ordered array of finished letters
-    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group (0,1,2,...)
-    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked letter index (0-based)
-    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // timestamp ms for next unlock (0 if none)
+    const LS_KEY_DONE = "abc_done_letters";
+    const LS_KEY_LAST_TEST = "abc_last_test_m";
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";
 
     // DOM
     const barFill = document.getElementById("barFill");
@@ -301,7 +327,7 @@
     const test = document.getElementById("test");
     const tGrid = document.getElementById("tGrid");
     const tPlay = document.getElementById("tPlay");
-    const tHint = document.getElementById("tHint"); // hidden via CSS
+    const tHint = document.getElementById("tHint");
     const tClose = document.getElementById("tClose");
     const tProgress = document.getElementById("tProgress");
 
@@ -315,419 +341,4 @@
     const bypassToggle = document.getElementById("bypassToggle");
 
     /* ---------- App state ---------- */
-    let letterIdx = 0; // 0=A
-    let doneList = loadDoneList();                 // ordered list
-    let doneSet = new Set(doneList);
-    let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
-    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);   // A unlocked by default
-    let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
-    let BYPASS_LOCK = false;
-
-    /* ---------- Helpers ---------- */
-    function loadDoneList(){
-      try{ const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]"); return Array.isArray(raw) ? raw : []; }
-      catch{ return []; }
-    }
-    function saveDone(){ try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{} }
-    function loadNumber(key, def){ const n = Number(localStorage.getItem(key) ?? def); return Number.isFinite(n) ? n : def; }
-    function saveNumber(key, val){ try{ localStorage.setItem(key, String(val)); }catch{} }
-
-    function getCardBase(i){ return i*4; }
-    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; } // 1,5,9,...
-
-    function showCard(n){
-      const base = getCardBase(Math.min(letterIdx, MAX_IDX));
-      const num = base + n; // 1..4
-      letterImg.src = `./${num}.jpg`;
-      letterImg.alt = `レター画像`;
-    }
-
-    function updateTop(){
-      const progress = (doneSet.size / TOTAL_LETTERS) * 100;
-      barFill.style.width = progress + "%";
-      where.textContent = `${letters[letterIdx]}`;
-      updateLockUI();
-    }
-
-    function now(){ return Date.now(); }
-
-    // hh:mm:ss for the countdown
-    function msToHMS(ms){
-      if (ms <= 0) return "0時間0分0秒";
-      const s = Math.floor(ms / 1000);
-      const h = Math.floor(s / 3600);
-      const m = Math.floor((s % 3600) / 60);
-      const sec = s % 60;
-      return `${h}時間${m}分${sec}秒`;
-    }
-
-    function updateLockUI(){
-      if (unlockIdx >= MAX_IDX){
-        lockStatus.innerHTML = `<span class="lock-unlocked">✅ 全ての文字がアンロック済み</span>`;
-        lockFill.style.width = '100%';
-        lockGhost.style.left = '100%';
-        return;
-      }
-      if (nextUnlockMs > 0){
-        const remaining = Math.max(0, nextUnlockMs - now());
-        const total = 24*60*60*1000;
-        const pct = Math.min(1, 1 - (remaining / total)); // fill as time passes
-        lockFill.style.width = (pct*100).toFixed(1) + '%';
-        lockGhost.style.left = (pct*100).toFixed(1) + '%';
-        if (remaining > 0){
-          lockStatus.innerHTML = `<strong>次の文字は ${msToHMS(remaining)} 後にアンロック</strong>`;
-        }else{
-          lockStatus.innerHTML = `<strong>新しい文字がアンロックされました</strong>`;
-        }
-      }else{
-        lockFill.style.width = '0%';
-        lockGhost.style.left = '0%';
-        lockStatus.innerHTML = `<strong>次の文字は 24時間 後にアンロック</strong>`;
-      }
-    }
-
-    function refreshUnlocks(){
-      if (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
-        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX); // unlock next letter
-        nextUnlockMs = 0; // reset until user finishes this one
-        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-      }
-      updateLockUI();
-    }
-    setInterval(()=>{ refreshUnlocks(); }, 1000); // smooth meter
-    window.addEventListener('focus', refreshUnlocks);
-
-    function clampToUnlocked(i){
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
-      return Math.max(0, Math.min(i, limit));
-    }
-
-    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
-    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
-
-    function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
-    function playLetterTimes(times){
-      const L = letters[letterIdx];
-      const name = L.repeat(times); // "A","AA","AAA","AAAA"
-      const src = `assets/audio/${name}.m4a`;
-      playSound(src, 1);
-    }
-    function playLetterCueByIndex(idx){
-      const L = letters[idx];
-      playSound(`assets/audio/${L}.m4a`, 1.0);
-    }
-
-    function firstUnfinishedUnlocked(){
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
-      for (let i=0;i<=limit;i++){
-        if (!doneSet.has(letters[i])) return i;
-      }
-      return clampToUnlocked(letterIdx); // stay
-    }
-
-    /* ---------- Start ---------- */
-    function startAppFull(){
-      startApp(); // hide overlay via early fallback
-      if (test && test.style && test.style.display === 'none') test.style.removeProperty('display');
-      refreshUnlocks();
-      letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
-      setButtonColorsReset();
-      showCard(1);
-      updateTop();
-    }
-    window.startAppFull = startAppFull;
-
-    if(location.hash === '#go'){ startAppFull(); }
-
-    /* ---------- Buttons ---------- */
-    btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); markBtnDone(btn1); };
-    btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); markBtnDone(btn2); };
-    btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); markBtnDone(btn3); };
-    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); markBtnDone(btn4); finishBtn.style.display='inline-block'; };
-
-    /* ---------- Finish & quizzes ---------- */
-    function maybeOpenTestAfterFinish(){
-      // Trigger after every 5 unique finished letters: 5,10,15,...
-      const groupsDone = Math.floor(doneSet.size / 5);
-      if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
-        lastMilestoneDone = groupsDone;
-        localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
-        openTest(); // immediate
-      }
-    }
-
-    function startFinishConfetti(duration=5000){
-      const cFinish = document.getElementById("confettiFinish");
-      const xFinish = cFinish.getContext("2d");
-      function resize(){ cFinish.width = innerWidth; cFinish.height = innerHeight; }
-      resize(); window.addEventListener('resize', resize, {once:true});
-
-      let running = true;
-      const pieces = Array.from({length:360}).map(()=>({
-        x: Math.random()*cFinish.width, y: -Math.random()*cFinish.height,
-        r: Math.random()*8+3, vy: Math.random()*2+1.5,
-        color: `hsl(${Math.random()*360},100%,55%)`
-      }));
-      const end = Date.now() + duration;
-      (function draw(){
-        xFinish.clearRect(0,0,cFinish.width,cFinish.height);
-        for(const p of pieces){
-          xFinish.beginPath(); xFinish.arc(p.x,p.y,p.r,0,2*Math.PI);
-          xFinish.fillStyle = p.color; xFinish.fill();
-          p.y += p.vy*2.2; if(p.y>cFinish.height+12){ p.y = -10; p.x = Math.random()*cFinish.width; }
-        }
-        if(Date.now()<end && running) requestAnimationFrame(draw);
-        else { xFinish.clearRect(0,0,cFinish.width,cFinish.height); running=false; }
-      })();
-    }
-
-    finishBtn.onclick = ()=>{
-      playClick();
-      const L = letters[letterIdx];
-      if(!doneSet.has(L)){
-        doneSet.add(L);
-        doneList.push(L);
-        saveDone();
-      }
-
-      // Finish celebration (keep longer) + magic sound
-      playSound('assets/sfx/magic.mp3', 1.5);
-      startFinishConfetti(5000);
-
-      finishBtn.style.display='none';
-      setButtonColorsReset();
-
-      // Schedule next unlock (24h) ONLY when finishing the current highest unlocked letter
-      if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
-        nextUnlockMs = now() + 24*60*60*1000;
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-      }
-
-      // Test (every 5th finish)
-      maybeOpenTestAfterFinish();
-
-      // Stay for review; next unlock will be by timer (or bypass)
-      showCard(1);
-      updateTop();
-    };
-
-    /* ---------- Dev nav (respects bypass) ---------- */
-    prev.onclick = ()=>{
-      letterIdx = Math.max(0, letterIdx-1);
-      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
-    };
-    next.onclick = ()=>{
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
-      const nextIdx = Math.min(limit, letterIdx + 1);
-      letterIdx = nextIdx;
-      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
-    };
-
-    /* ---------- Floating control panel ---------- */
-    ctrlFab.onclick = ()=>{ ctrl.classList.toggle('open'); };
-    bypassToggle.onchange = (e)=>{ BYPASS_LOCK = e.target.checked; updateTop(); };
-    document.getElementById("ctrlPrev").onclick = ()=> prev.click();
-    document.getElementById("ctrlNext").onclick = ()=> next.click();
-    document.getElementById("ctrlUnlock").onclick = ()=>{
-      // Instantly unlock next (teacher tool)
-      if (unlockIdx < MAX_IDX){
-        unlockIdx += 1;
-        nextUnlockMs = 0;
-        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-        updateTop();
-      }
-    };
-    document.getElementById("ctrlTest").onclick = ()=> openTest();
-
-  /* ---------- Quiz confetti: punchy multi-blast (3s, extra colors) ---------- */
-function startQuizConfetti(duration = 3000){
-  const cQuiz = document.getElementById("confettiQuiz");
-  const xQuiz = cQuiz.getContext("2d");
-  cQuiz.style.zIndex = '200'; // ensure on top
-  function resize(){ cQuiz.width = innerWidth; cQuiz.height = innerHeight; }
-  resize(); window.addEventListener('resize', resize, {once:true});
-
-  const cx = cQuiz.width/2, cy = cQuiz.height/2;
-  let items = [];
-  const start = Date.now();
-
-  // Color palettes (adds variety beyond random HSL)
-  const palettes = [
-    ["#ff3b30","#ffcc00","#34c759","#007aff","#af52de","#ff9f0a"],
-    ["#e11d48","#7c3aed","#06b6d4","#22c55e","#f59e0b","#ef4444"],
-    ["#00e5ff","#b6ff00","#ff6d00","#ff00e5","#00ffa3","#ffd300"]
-  ];
-
-  function pickColorPair(){
-    const pal = palettes[Math.floor(Math.random()*palettes.length)];
-    const c1 = pal[Math.floor(Math.random()*pal.length)];
-    const c2 = pal[Math.floor(Math.random()*pal.length)];
-    return [c1,c2];
-  }
-
-  // Emit a burst of particles (stars + ribbons + circles) with varied colors
-  function emitBurst(size = 160){
-    for(let i=0;i<size;i++){
-      const angle = Math.random()*Math.PI*2;
-      const speed = Math.random()*4 + 2.8;
-      const typeRnd = Math.random();
-      const type  = typeRnd < 0.45 ? 'star' : (typeRnd < 0.85 ? 'ribbon' : 'dot');
-      const [c1,c2] = pickColorPair();
-      items.push({
-        x: cx, y: cy,
-        vx: Math.cos(angle)*speed,
-        vy: Math.sin(angle)*speed,
-        rot: Math.random()*Math.PI,
-        vr: (Math.random()-.5)*0.32,
-        type,
-        life: 700 + Math.random()*900, // 0.7–1.6s
-        c1, c2, r: Math.random()*6+3
-      });
-    }
-    // sparkle
-    for(let i=0;i<40;i++){
-      const a = Math.random()*Math.PI*2, s = Math.random()*5+3;
-      items.push({
-        x: cx, y: cy, vx: Math.cos(a)*s, vy: Math.sin(a)*s,
-        rot: 0, vr: 0, type:'spark', life: 400 + Math.random()*500, c1:'#ffffff', c2:'#ffffff', r:2
-      });
-    }
-  }
-
-  // First big pop, then quick pops every 400ms (shorter show)
-  emitBurst(200);
-  const interval = setInterval(()=>{
-    if (Date.now() - start < duration) emitBurst(130);
-    else clearInterval(interval);
-  }, 400);
-
-  (function draw(){
-    const t = Date.now() - start;
-    xQuiz.clearRect(0,0,cQuiz.width,cQuiz.height);
-
-    for (const it of items){
-      it.x  += it.vx;
-      it.y  += it.vy;
-      it.vy += 0.05;   // gravity
-      it.rot += it.vr;
-      it.life -= 16;
-
-      xQuiz.save();
-      xQuiz.translate(it.x, it.y);
-      xQuiz.rotate(it.rot);
-      if (it.type === 'star'){
-        xQuiz.fillStyle = it.c1;
-        drawStar(xQuiz, 0, 0, 5, 8, 3.5);
-        xQuiz.fill();
-      } else if (it.type === 'ribbon'){
-        xQuiz.fillStyle = it.c2;
-        xQuiz.fillRect(-8,-2,16,4);
-      } else if (it.type === 'spark'){
-        xQuiz.globalAlpha = 0.9;
-        xQuiz.fillStyle = it.c1;
-        xQuiz.fillRect(-1,-1,2,2);
-      } else { // dot
-        xQuiz.fillStyle = it.c1;
-        xQuiz.beginPath();
-        xQuiz.arc(0,0,it.r,0,Math.PI*2);
-        xQuiz.fill();
-      }
-      xQuiz.restore();
-    }
-
-    // Cull dead/off-screen particles
-    items = items.filter(it =>
-      it.life > 0 &&
-      it.x > -60 && it.x < cQuiz.width + 60 &&
-      it.y < cQuiz.height + 60
-    );
-
-    if (t < duration + 300){ requestAnimationFrame(draw); }
-    else { xQuiz.clearRect(0,0,cQuiz.width,cQuiz.height); }
-  })();
-}
-
-function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
-  let rot = Math.PI / 2 * 3;
-  let cx = x, cy = y;
-  let step = Math.PI / spikes;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy - outerRadius);
-  for (let i = 0; i < spikes; i++) {
-    cx = x + Math.cos(rot) * outerRadius;
-    cy = y + Math.sin(rot) * outerRadius;
-    ctx.lineTo(cx, cy);
-    rot += step;
-
-    cx = x + Math.cos(rot) * innerRadius;
-    cy = y + Math.sin(rot) * innerRadius;
-    ctx.lineTo(cx, cy);
-    rot += step;
-  }
-  ctx.lineTo(x, y - outerRadius);
-  ctx.closePath();
-}
-
-
-    /* ---------- TEST PAGE LOGIC (single-letter images, shuffled answers) ---------- */
-    function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
-
-    function openTest(){
-      // Prefer last 5 finished letters; else use unlocked range
-      const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
-      let pool = recent.length >= 4 ? recent : Array.from({length:(BYPASS_LOCK?MAX_IDX+1:unlockIdx+1)}, (_,i)=>i);
-      pool = shuffle(pool).slice(0,4);
-
-      // Pick correct from pool, then SHUFFLE RENDER ORDER
-      const correctIdx = pool[Math.floor(Math.random()*pool.length)];
-      const renderOrder = shuffle([...pool]);
-
-      // Render grid with FIRST card only: 1,5,9,13,…
-      tGrid.innerHTML = '';
-      for(const idx of renderOrder){
-        const btn = document.createElement('button');
-        btn.type='button'; btn.className='t-item';
-        const img = document.createElement('img');
-        img.src = firstCardSrc(idx);
-        img.alt = 'えらぶレター';
-        btn.appendChild(img);
-        btn.onclick = ()=>{
-          const ok = idx === correctIdx;
-          btn.classList.add(ok?'correct':'wrong');
-          if(ok){
-            // QUIZ: cheer + punchy multi-burst confetti (3s)
-            playSound('assets/sfx/cheer.mp3', 1.0);
-            [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
-            startQuizConfetti(3000);
-            tClose.style.display = 'inline-block';
-          }else{
-            setTimeout(()=> btn.classList.remove('wrong'), 380);
-          }
-        };
-        tGrid.appendChild(btn);
-      }
-
-      tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-
-      // Ensure hint remains invisible/empty
-      if(tHint){ tHint.textContent = ''; }
-
-      tClose.style.display = 'none';
-      tProgress.textContent = '1 / 1';
-      test.classList.add('active');
-
-      // immediate first play (no on-screen text)
-      playLetterCueByIndex(correctIdx);
-
-      // close
-      const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
-      test.addEventListener('click', backdropClose, {once:true});
-      tClose.onclick = closeTest;
-    }
-
-    function closeTest(){ test.classList.remove('active'); stopActive(); }
-  </script>
-</body>
-</html>
+    let letterIdx
