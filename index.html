@@ -44,30 +44,44 @@
     .start-link:active{transform:scale(.98)}
 
     /* Top bar */
-    .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
-    .left{display:flex;align-items:center;gap:12px}
-    .progress{width:180px}
-    .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
-    .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
-    .where{font-weight:800;min-width:3ch}
-
-    /* Lock meter (wider + bigger ghost) */
-    .lockbox{display:flex;flex-direction:column;gap:6px;min-width:320px}
-    .lockline{font-size:12px;color:#444;display:flex;align-items:center;gap:6px}
-    .lockmeter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); overflow:hidden}
-    .lockmeter i{position:absolute;left:0;top:0;height:100%;width:0%;
-      background:repeating-linear-gradient(45deg, #ffd1e6 0 10px, #ffe6f1 10px 20px);
-      transition:width .6s}
-    .lock-ghost{
-      position:absolute;top:-10px;transform:translateX(-50%);
-      width:26px;height:26px; /* bigger PNG marker */
-      background:url('./playful-pink-booha.png') center/contain no-repeat;
-      transition:left .6s
+    .topbar{
+      display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px
     }
-    .lock-unlocked{color:#16a34a;font-weight:700}
+    .left{display:flex;flex-direction:column;gap:6px;min-width:320px}
+    .right{display:flex;align-items:center;gap:10px}
+
+    /* 24h lock meter (left) */
+    .lockline{font-size:12px;color:#333;display:flex;align-items:center;gap:6px}
+    .lockline b{font-weight:800}
+    .lockwrap{display:flex;align-items:center;gap:8px}
+    .ghost-outside{
+      width:26px;height:26px;flex:0 0 26px;
+      background:url('./playful-pink-booha.png') center/contain no-repeat;
+      transform:translateY(-1px);
+    }
+    .lockmeter{
+      position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);
+      box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); overflow:hidden;
+      width:min(44vw,520px);
+    }
+    .lockmeter i{
+      position:absolute;left:0;top:0;height:100%;width:0%;
+      background:#7c5cff;            /* purple fill */
+      transition:width .6s;
+    }
+
+    /* A–Z progress (right, top corner) */
+    .az{
+      display:flex;align-items:center;gap:10px;min-width:240px
+    }
+    .az-label{font-weight:800;white-space:nowrap}
+    .progress{width:180px}
+    .bar{height:10px;background:#eee;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
+    .bar>i{display:block;height:100%;background:#7c5cff;width:0%} /* purple to match */
+    .where{font-weight:800;min-width:3ch;text-align:center}
 
     /* Letter screen */
-    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 108px);padding:16px;gap:16px;text-align:center}
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 120px);padding:16px;gap:16px;text-align:center}
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
@@ -86,14 +100,13 @@
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
 
-    /* Dev row (reset removed earlier) */
+    /* Dev row */
     .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
     .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
     .tbtn:active{transform:scale(.98)}
 
-    /* Fireworks canvases */
+    /* Confetti canvases */
     canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
-    /* raise above the test modal */
     canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
 
     /* === TEST PAGE (modal) === */
@@ -114,7 +127,7 @@
     .t-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
     .t-ok{background:#28a745}
     .t-progress{font-weight:800}
-    .t-hint{display:none} /* hide “G の音” etc. */
+    .t-hint{display:none}
     @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
 
     /* Floating tiny control panel */
@@ -142,26 +155,31 @@
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
       <h1>スターターアプリへようこそ！</h1>
       <p>このアプリをホーム画面に追加してください。</p>
-      <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
+      <p><b>次の文字は 24時間後 にアンロック</b></p>
       <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
     </div>
   </div>
 
   <!-- Top bar -->
   <div class="topbar">
+    <!-- LEFT: 24h timer -->
     <div class="left">
-      <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
-      <div id="where" class="where" aria-live="polite">A</div>
+      <div class="lockline"><span id="lockStatus"><b>次の文字は 24時間 後にアンロック</b></span></div>
+      <div class="lockwrap">
+        <div class="ghost-outside" aria-hidden="true"></div>
+        <div class="lockmeter">
+          <i id="lockFill"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="lockbox">
-      <div class="lockline">
-        <span id="lockStatus">🔒 次の文字は 24時間 後にアンロック</span>
+    <!-- RIGHT: A–Z progress (meter + numeric) -->
+    <div class="right">
+      <div class="az">
+        <span class="az-label">A–Z 進捗</span>
+        <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
       </div>
-      <div class="lockmeter">
-        <i id="lockFill"></i>
-        <span id="lockGhost" class="lock-ghost" style="left:0%"></span>
-      </div>
+      <div id="where" class="where" aria-live="polite">A</div>
     </div>
   </div>
 
@@ -265,14 +283,14 @@
 
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const MAX_IDX = 14; // A..O
+    const MAX_IDX = 25; // A..Z (26 letters)
     const TOTAL_LETTERS = MAX_IDX + 1;
 
     // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";      // ordered array of finished letters
-    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group (0,1,2,...)
-    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked letter index (0-based)
-    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // timestamp ms for next unlock (0 if none)
+    const LS_KEY_DONE = "abc_done_letters";         // ordered array of finished letters
+    const LS_KEY_LAST_TEST = "abc_last_test_m";     // last milestone group (0,1,2,...)
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";     // highest unlocked letter index (0-based)
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";// timestamp ms for next unlock (0 if none)
 
     // DOM
     const barFill = document.getElementById("barFill");
@@ -286,7 +304,6 @@
     const clickAudio = document.getElementById("clickAudio");
     const lockStatus = document.getElementById("lockStatus");
     const lockFill = document.getElementById("lockFill");
-    const lockGhost = document.getElementById("lockGhost");
 
     // Dev nav
     const prev = document.getElementById("prev");
@@ -335,6 +352,8 @@
       const num = base + n; // 1..4
       letterImg.src = `./${num}.jpg`;
       letterImg.alt = `レター画像`;
+      // Only show Finish for today's newly unlocked letter
+      finishBtn.style.display = (letterIdx === unlockIdx && n === 4) ? 'inline-block' : 'none';
     }
 
     function updateTop(){
@@ -358,9 +377,8 @@
 
     function updateLockUI(){
       if (unlockIdx >= MAX_IDX){
-        lockStatus.innerHTML = `<span class="lock-unlocked">✅ 全ての文字がアンロック済み</span>`;
+        lockStatus.innerHTML = `<b>全ての文字がアンロック済み</b>`;
         lockFill.style.width = '100%';
-        lockGhost.style.left = '100%';
         return;
       }
       if (nextUnlockMs > 0){
@@ -368,23 +386,35 @@
         const total = 24*60*60*1000;
         const pct = Math.min(1, 1 - (remaining / total)); // fill as time passes
         lockFill.style.width = (pct*100).toFixed(1) + '%';
-        lockGhost.style.left = (pct*100).toFixed(1) + '%';
         if (remaining > 0){
-          lockStatus.textContent = `🔒 次の文字は ${msToHMS(remaining)} 後にアンロック`;
+          lockStatus.innerHTML = `<b>次の文字は ${msToHMS(remaining)} 後にアンロック</b>`;
         }else{
-          lockStatus.textContent = `🆕 新しい文字がアンロックされました`;
+          lockStatus.innerHTML = `<b>新しい文字がアンロックされました</b>`;
         }
       }else{
         lockFill.style.width = '0%';
-        lockGhost.style.left = '0%';
-        lockStatus.textContent = `🔒 次の文字は 24時間 後にアンロック`;
+        lockStatus.innerHTML = `<b>次の文字は 24時間 後にアンロック</b>`;
       }
     }
 
+    // Daily time-based unlocks: every 24h, +1 letter (independent of Finish)
+    function initDailyUnlockTimer(){
+      // if there's no timer yet and we haven't reached Z, start it now
+      if (nextUnlockMs === 0 && unlockIdx < MAX_IDX){
+        nextUnlockMs = now() + 24*60*60*1000;
+        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+      }
+      refreshUnlocks();
+    }
+
     function refreshUnlocks(){
-      if (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
-        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX); // unlock next letter
-        nextUnlockMs = 0; // reset until user finishes this one
+      let changed = false;
+      while (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
+        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX);
+        nextUnlockMs += 24*60*60*1000;  // schedule the next day
+        changed = true;
+      }
+      if (changed){
         saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
@@ -409,7 +439,6 @@
       playSound(src, 1);
     }
     function playLetterCueByIndex(idx){
-      // No on-screen text like “G の音”
       const L = letters[idx];
       playSound(`assets/audio/${L}.m4a`, 1.0);
     }
@@ -425,8 +454,7 @@
     /* ---------- Start ---------- */
     function startAppFull(){
       startApp(); // hide overlay via early fallback
-      if (test && test.style && test.style.display === 'none') test.style.removeProperty('display');
-      refreshUnlocks();
+      initDailyUnlockTimer();
       letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
       setButtonColorsReset();
       showCard(1);
@@ -440,16 +468,22 @@
     btn1.onclick = ()=>{ showCard(1); playLetterTimes(1); markBtnDone(btn1); };
     btn2.onclick = ()=>{ showCard(2); playLetterTimes(2); markBtnDone(btn2); };
     btn3.onclick = ()=>{ showCard(3); playLetterTimes(3); markBtnDone(btn3); };
-    btn4.onclick = ()=>{ showCard(4); playLetterTimes(4); markBtnDone(btn4); finishBtn.style.display='inline-block'; };
+    btn4.onclick = ()=>{
+      showCard(4);
+      playLetterTimes(4);
+      markBtnDone(btn4);
+      // Only reveal Finish if user is on today's newly unlocked letter
+      if (letterIdx === unlockIdx) finishBtn.style.display='inline-block';
+    };
 
     /* ---------- Finish & quizzes ---------- */
     function maybeOpenTestAfterFinish(){
-      // Trigger after every 5 unique finished letters: 5,10,15,...
+      // Trigger after every 5 unique finished letters: 5,10,15,20,25
       const groupsDone = Math.floor(doneSet.size / 5);
       if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
         lastMilestoneDone = groupsDone;
         localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
-        openTest(); // immediate
+        openTest();
       }
     }
 
@@ -487,23 +521,14 @@
         saveDone();
       }
 
-      // Finish celebration (keep longer) + magic sound
       playSound('assets/sfx/magic.mp3', 1.5);
       startFinishConfetti(5000);
 
       finishBtn.style.display='none';
       setButtonColorsReset();
 
-      // Schedule next unlock (24h) ONLY when finishing the current highest unlocked letter
-      if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
-        nextUnlockMs = now() + 24*60*60*1000;
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-      }
-
-      // Test (every 5th finish)
       maybeOpenTestAfterFinish();
 
-      // Stay for review; next unlock will be by timer (or bypass)
       showCard(1);
       updateTop();
     };
@@ -526,10 +551,10 @@
     document.getElementById("ctrlPrev").onclick = ()=> prev.click();
     document.getElementById("ctrlNext").onclick = ()=> next.click();
     document.getElementById("ctrlUnlock").onclick = ()=>{
-      // Instantly unlock next (teacher tool)
+      // Teacher tool: instantly unlock the next letter
       if (unlockIdx < MAX_IDX){
         unlockIdx += 1;
-        nextUnlockMs = 0;
+        if (nextUnlockMs === 0) nextUnlockMs = now() + 24*60*60*1000;
         saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
         updateTop();
@@ -537,11 +562,11 @@
     };
     document.getElementById("ctrlTest").onclick = ()=> openTest();
 
-  /* ---------- Quiz confetti: multi-blast rainbow (8s) ---------- */
-function startQuizConfetti(duration = 8000){
+  /* ---------- Quiz confetti: multi-blast rainbow (4s) ---------- */
+function startQuizConfetti(duration = 4000){
   const cQuiz = document.getElementById("confettiQuiz");
   const xQuiz = cQuiz.getContext("2d");
-  cQuiz.style.zIndex = '200'; // ensure on top
+  cQuiz.style.zIndex = '200';
   function resize(){ cQuiz.width = innerWidth; cQuiz.height = innerHeight; }
   resize(); window.addEventListener('resize', resize, {once:true});
 
@@ -549,19 +574,17 @@ function startQuizConfetti(duration = 8000){
   let items = [];
   const start = Date.now();
 
-  // Emit a burst of particles (stars + ribbons) with varied colors
   function emitBurst(size = 140){
     for(let i=0;i<size;i++){
       const angle = Math.random()*Math.PI*2;
       const speed = Math.random()*4 + 2.5;
       const type  = Math.random() < 0.5 ? 'star' : 'ribbon';
 
-      // Wide color spread (two different hues per item)
       const hue1 = Math.floor(Math.random()*360);
       const hue2 = (hue1 + 60 + Math.floor(Math.random()*180)) % 360;
-      const sat  = 80 + Math.floor(Math.random()*20);       // 80–100%
-      const l1   = 55 + Math.floor(Math.random()*25);       // 55–80%
-      const l2   = 45 + Math.floor(Math.random()*25);       // 45–70%
+      const sat  = 80 + Math.floor(Math.random()*20);
+      const l1   = 55 + Math.floor(Math.random()*25);
+      const l2   = 45 + Math.floor(Math.random()*25);
 
       items.push({
         x: cx, y: cy,
@@ -570,14 +593,13 @@ function startQuizConfetti(duration = 8000){
         rot: Math.random()*Math.PI,
         vr: (Math.random()-.5)*0.28,
         type,
-        life: 600 + Math.random()*1200, // each piece lives ~0.6–1.8s
+        life: 600 + Math.random()*1200,
         c1: `hsl(${hue1},${sat}%,${l1}%)`,
         c2: `hsl(${hue2},${sat}%,${l2}%)`
       });
     }
   }
 
-  // First big pop, then additional pops every 600ms until time’s up
   emitBurst(180);
   const interval = setInterval(()=>{
     if (Date.now() - start < duration) emitBurst(120);
@@ -588,11 +610,10 @@ function startQuizConfetti(duration = 8000){
     const t = Date.now() - start;
     xQuiz.clearRect(0,0,cQuiz.width,cQuiz.height);
 
-    // Update & render
     for (const it of items){
       it.x  += it.vx;
       it.y  += it.vy;
-      it.vy += 0.045;   // gravity
+      it.vy += 0.045;
       it.rot += it.vr;
       it.life -= 16;
 
@@ -610,7 +631,6 @@ function startQuizConfetti(duration = 8000){
       xQuiz.restore();
     }
 
-    // Cull dead/off-screen particles
     items = items.filter(it =>
       it.life > 0 &&
       it.x > -60 && it.x < cQuiz.width + 60 &&
@@ -643,7 +663,6 @@ function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
   ctx.closePath();
 }
 
-
     /* ---------- TEST PAGE LOGIC (single-letter images, shuffled answers) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
@@ -653,11 +672,9 @@ function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
       let pool = recent.length >= 4 ? recent : Array.from({length:(BYPASS_LOCK?MAX_IDX+1:unlockIdx+1)}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
 
-      // Pick correct from pool, then SHUFFLE RENDER ORDER
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
       const renderOrder = shuffle([...pool]);
 
-      // Render grid with FIRST card only: 1,5,9,13,…
       tGrid.innerHTML = '';
       for(const idx of renderOrder){
         const btn = document.createElement('button');
@@ -670,7 +687,6 @@ function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
           const ok = idx === correctIdx;
           btn.classList.add(ok?'correct':'wrong');
           if(ok){
-            // QUIZ: cheer + long multi-burst confetti (on top)
             playSound('assets/sfx/cheer.mp3', 1.0);
             [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
             startQuizConfetti(8000);
@@ -684,17 +700,14 @@ function drawStar(ctx, x, y, spikes, outerRadius, innerRadius){
 
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
 
-      // Ensure hint remains invisible/empty
       if(tHint){ tHint.textContent = ''; }
 
       tClose.style.display = 'none';
       tProgress.textContent = '1 / 1';
       test.classList.add('active');
 
-      // immediate first play (no on-screen text)
       playLetterCueByIndex(correctIdx);
 
-      // close
       const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
       test.addEventListener('click', backdropClose, {once:true});
       tClose.onclick = closeTest;
