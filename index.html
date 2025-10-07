@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ブーハABC – スターター</title>
+  <title>ブーハー ABC スターター</title>
 
   <!-- Minimal early fallback -->
   <script>
@@ -36,17 +36,29 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar */
-    .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
-    .left{display:flex;align-items:center;gap:12px}
-    .progress{width:180px}
-    .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
-    .bar>i{display:block;height:100%;background:#ff4da6;width:0%}
-    .where{font-weight:800;min-width:3ch}
-    .lockmsg{font-size:12px;color:#444}
+    /* Top bar with meters */
+    .topbar{
+      display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+      padding:10px 16px;
+    }
+    .chip{
+      background:#ffffffcc; backdrop-filter:saturate(1.2) blur(2px);
+      border:1px solid rgba(0,0,0,.06); border-radius:999px;
+      padding:8px 12px; display:flex; align-items:center; gap:10px;
+      box-shadow:0 6px 14px rgba(0,0,0,.06);
+    }
+    .rail{position:relative; width:180px; height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
+    .fill{position:absolute; inset:0 auto 0 0; width:0; height:100%; background:#ff4da6}
+    .lab{font-weight:900}
+    .currentLetter{font-weight:900}
+
+    /* Countdown (right) */
+    .rail.clock{background:#e8e3ff}
+    .fill.clock{background:#7c5cff}
+    .count{font-weight:900; font-variant-numeric: tabular-nums}
 
     /* Letter screen */
-    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 88px);padding:16px;gap:16px;text-align:center}
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 96px);padding:16px;gap:16px;text-align:center}
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
@@ -55,13 +67,12 @@
     .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    /* Color change after click */
+    /* Click progress + lock */
     .btn1.done{background:#ff7a7a}
     .btn2.done{background:#16c1de}
     .btn3.done{background:#ffe08c;color:#111}
     .btn4.done{background:#9a86ff}
     .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
-    /* Locked state for order enforcement */
     .btn-audio.locked{opacity:.45;pointer-events:none}
 
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
@@ -70,7 +81,7 @@
     /* Fireworks */
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* === QUIZ MODAL (internal only; no external buttons) === */
+    /* QUIZ (internal only) */
     #quiz{position:fixed;inset:0;z-index:80;display:none}
     #quiz.active{display:block}
     .q-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -99,6 +110,31 @@
   <div class="bg"></div>
   <div class="overlay"></div>
 
+  <!-- Top bar with meters -->
+  <div class="topbar">
+    <!-- Left: A→Z meter -->
+    <div class="chip">
+      <span class="lab">A</span>
+      <div class="rail" aria-label="A→Z 進捗">
+        <div id="azFill" class="fill"></div>
+      </div>
+      <span class="lab">Z</span>
+      <span class="currentLetter" id="currentLetter">A</span>
+    </div>
+
+    <!-- Center: Booha -->
+    <img src="./playful-pink-booha.png" alt="Booha" style="width:60px;height:60px;object-fit:contain" />
+
+    <!-- Right: purple live countdown -->
+    <div class="chip">
+      <span class="lab">次のアンロック</span>
+      <div class="rail clock" aria-label="24h カウントダウン">
+        <div id="cdFill" class="fill clock"></div>
+      </div>
+      <span id="cdText" class="count">00:00:00</span>
+    </div>
+  </div>
+
   <!-- Start / Hello -->
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
@@ -108,15 +144,6 @@
       <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
       <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
     </div>
-  </div>
-
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="left">
-      <div class="progress"><div class="bar"><i id="barFill"></i></div></div>
-      <div id="where" class="where" aria-live="polite">A</div>
-    </div>
-    <div id="lockMsg" class="lockmsg"></div>
   </div>
 
   <!-- Letter screen -->
@@ -137,7 +164,7 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- === QUIZ (internal) === -->
+  <!-- QUIZ (internal; auto after every 5) -->
   <div id="quiz" aria-hidden="true">
     <div class="q-back"></div>
     <div class="q-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
@@ -157,9 +184,26 @@
 
   <!-- MAIN APP -->
   <script>
+    /* ---------- Versioned reset: force start at A once after this update ---------- */
+    const APP_VERSION = "abc-2025-10-07AZ";
+    const LS_KEY_APP_VERSION = "abc_app_version";
+    (function versionReset(){
+      try{
+        const v = localStorage.getItem(LS_KEY_APP_VERSION);
+        if(v !== APP_VERSION){
+          // wipe relevant state to start from A cleanly
+          localStorage.removeItem("abc_done_letters");
+          localStorage.removeItem("abc_last_test_m");
+          localStorage.removeItem("abc_unlock_idx");
+          localStorage.removeItem("abc_next_unlock_ms");
+          localStorage.setItem(LS_KEY_APP_VERSION, APP_VERSION);
+        }
+      }catch{}
+    })();
+
     /* ---------- Safety net ---------- */
     (function trap(){
-      const og = console.error.bind(console);
+      const og = console.error ? console.error.bind(console) : ()=>{};
       window.addEventListener('error', e => { try{ og('JS error:', e.message); }catch{} }, {capture:true});
       window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
     })();
@@ -179,25 +223,29 @@
         activeAudio.play().catch(()=>{});
       }catch(e){}
     }
-    // stop audio on page hide
     window.addEventListener('pagehide', stopActive);
     window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
     /* ---------- Constants & DOM ---------- */
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(); // 26
     const MAX_IDX = 25; // A..Z
     const TOTAL_LETTERS = 26;
+    const H24 = 24*60*60*1000;
 
     // LocalStorage keys
     const LS_KEY_DONE = "abc_done_letters";      // ordered array of finished letters (["A","B",...])
-    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group (0,1,2,...)
+    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group number
     const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked letter index (0-based)
     const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // timestamp ms when next letter unlocks (0 if none scheduled)
 
     // DOM
     const hello = document.getElementById("hello");
-    const barFill = document.getElementById("barFill");
-    const where = document.getElementById("where");
+
+    const azFill = document.getElementById("azFill");
+    const currentLetterEl = document.getElementById("currentLetter");
+    const cdFill = document.getElementById("cdFill");
+    const cdText = document.getElementById("cdText");
+
     const letterImg = document.getElementById("letterImg");
     const btn1 = document.getElementById("btn1");
     const btn2 = document.getElementById("btn2");
@@ -207,7 +255,6 @@
     const finishBtn = document.getElementById("finishBtn");
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
-    const lockMsg = document.getElementById("lockMsg");
 
     // Quiz modal
     const quiz = document.getElementById("quiz");
@@ -254,11 +301,11 @@
       letterImg.alt = `レター画像`;
     }
 
-    function updateTop(){
-      const progress = (doneSet.size / TOTAL_LETTERS) * 100;
-      barFill.style.width = progress + "%";
-      where.textContent = `${letters[letterIdx]}`;
-      updateLockMsg();
+    function setAZMeter(){
+      // Track unlocked boundary (progress from A→Z), and show current letter
+      const pct = (unlockIdx/25)*100;
+      azFill.style.width = pct + "%";
+      currentLetterEl.textContent = letters[letterIdx];
     }
 
     function now(){ return Date.now(); }
@@ -270,35 +317,36 @@
       const ss = s%60;
       return `${hh}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
     }
-    function updateLockMsg(){
-      if (unlockIdx >= MAX_IDX){
-        lockMsg.textContent = `全ての文字がアンロック済み`;
-        return;
-      }
+    function setCountdown(){
+      // Fill represents progress toward next unlock (0%→100%)
       if (nextUnlockMs > 0 && now() < nextUnlockMs){
-        lockMsg.textContent = `次の文字は ${msToHMS(nextUnlockMs - now())} 後にアンロック`;
+        const remain = nextUnlockMs - now();
+        const pct = Math.max(0, Math.min(100, (1 - (remain / H24)) * 100));
+        cdFill.style.width = pct + "%";
+        cdText.textContent = msToHMS(remain);
       }else if (nextUnlockMs > 0 && now() >= nextUnlockMs){
-        lockMsg.textContent = `新しい文字がアンロックされました`;
+        cdFill.style.width = "100%";
+        cdText.textContent = "00:00:00";
       }else{
-        lockMsg.textContent = ``;
+        cdFill.style.width = "0%";
+        cdText.textContent = "00:00:00";
       }
     }
 
     function refreshUnlocks(){
       if (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
         unlockIdx = Math.min(unlockIdx + 1, MAX_IDX); // unlock next letter
-        nextUnlockMs = 0; // wait until current unlocked letter is finished to schedule next
+        nextUnlockMs = 0; // wait until finishing this letter to schedule next
         saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-        updateTop();
       }
+      setAZMeter();
+      setCountdown();
     }
-    setInterval(()=>{ refreshUnlocks(); updateLockMsg(); }, 1000); // live countdown & unlock tick
+    setInterval(refreshUnlocks, 1000);
     window.addEventListener('focus', refreshUnlocks);
 
-    function clampToUnlocked(i){
-      return Math.max(0, Math.min(i, unlockIdx));
-    }
+    function clampToUnlocked(i){ return Math.max(0, Math.min(i, unlockIdx)); }
 
     function resetButtonsVisual(){ btns.forEach(b=> b.classList.remove('done','locked')); }
     function lockButtonsByStep(){
@@ -327,26 +375,25 @@
       for (let i=0;i<=unlockIdx;i++){
         if (!doneSet.has(letters[i])) return i;
       }
-      // all unlocked finished -> stay on latest unlocked
-      return unlockIdx;
+      return unlockIdx; // all unlocked finished -> stay on boundary
     }
 
     /* ---------- Start ---------- */
     function startAppFull(){
-      startApp(); // hide overlay via early fallback
+      startApp();
       refreshUnlocks();
       letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
       currentStep = doneSet.has(letters[letterIdx]) ? 5 : 1;
       resetButtonsVisual(); lockButtonsByStep();
       showCard(1);
-      updateTop();
+      setAZMeter();
+      setCountdown();
     }
     window.startAppFull = startAppFull;
 
-    // If loaded directly with #go, auto-start JS initialization
     if(location.hash === '#go'){ startAppFull(); }
 
-    /* ---------- Buttons (order enforced, no overlapping audio) ---------- */
+    /* ---------- Buttons (order enforced) ---------- */
     btn1.onclick = ()=> handleStep(1);
     btn2.onclick = ()=> handleStep(2);
     btn3.onclick = ()=> handleStep(3);
@@ -362,12 +409,11 @@
 
     /* ---------- Finish current letter ---------- */
     function maybeOpenQuizAfterFinish(){
-      // Trigger after every 5 unique finished letters: 5,10,15,20,25
-      const groupsDone = Math.floor(doneSet.size / 5); // 0->4=0, 5->9=1, …
+      const groupsDone = Math.floor(doneSet.size / 5); // 5,10,15,20,25
       if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
         lastMilestoneDone = groupsDone;
         localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
-        openQuiz(); // immediate
+        openQuiz();
       }
     }
 
@@ -380,25 +426,25 @@
         saveDone();
       }
 
-      // Reward
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(2000);
       finishBtn.style.display='none';
 
       // Schedule next unlock (24h) ONLY when finishing the current highest unlocked letter
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
-        nextUnlockMs = now() + 24*60*60*1000;
+        nextUnlockMs = now() + H24;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
 
       // Quiz (every 5th finish)
       maybeOpenQuizAfterFinish();
 
-      // Reset step and visuals for review mode
+      // Reset step for review
       currentStep = 1;
       resetButtonsVisual(); lockButtonsByStep();
       showCard(1);
-      updateTop();
+      setAZMeter();
+      setCountdown();
     };
 
     /* ---------- Fireworks (2s confetti) ---------- */
@@ -426,17 +472,15 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ---------- QUIZ LOGIC (single-letter images) ---------- */
+    /* ---------- QUIZ LOGIC ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
     function openQuiz(){
-      // Use the most recent 5 finished letters; show 4 options from those
       const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
       let pool = recent.length >= 4 ? recent : Array.from({length:Math.min(unlockIdx+1, MAX_IDX+1)}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
 
-      // Render grid with FIRST card only: 1,5,9,13,…
       qGrid.innerHTML = '';
       for(const idx of pool){
         const btn = document.createElement('button');
@@ -467,17 +511,14 @@
       qProgress.textContent = '1 / 1';
       quiz.classList.add('active');
 
-      // immediate first play
       playLetterCueByIndex(correctIdx);
 
-      // close (backdrop only)
       const backdropClose = (e)=>{ if(e.target.classList.contains('q-back')) closeQuiz(); };
       quiz.addEventListener('click', backdropClose, {once:true});
       qClose.onclick = closeQuiz;
     }
 
     function closeQuiz(){ quiz.classList.remove('active'); stopActive(); }
-
   </script>
 </body>
 </html>
