@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ブーハー ABC スターター</title>
+  <title>ブーハABC – スターター</title>
 
-  <!-- Minimal early fallback -->
   <script>
+    /* Minimal early fallback for no-JS browsers */
     function startApp(){
       const hello = document.getElementById('hello');
       if (hello) hello.style.display = 'none';
@@ -21,10 +21,9 @@
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
-    /* CSS-only fallback: when #go is targeted, hide hello overlay (works with no JS) */
-    #go:target ~ #hello{display:none}
+    #go:target ~ #hello{display:none} /* CSS-only fallback */
 
-    /* Hello / Start */
+    /* Hello */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
     .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
@@ -36,7 +35,7 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar with meters */
+    /* Top bar: progress (left), Booha (center), countdown (right) */
     .topbar{
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
       padding:10px 16px;
@@ -47,12 +46,9 @@
       padding:8px 12px; display:flex; align-items:center; gap:10px;
       box-shadow:0 6px 14px rgba(0,0,0,.06);
     }
-    .rail{position:relative; width:180px; height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
+    .rail{position:relative; width:200px; height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
     .fill{position:absolute; inset:0 auto 0 0; width:0; height:100%; background:#ff4da6}
-    .lab{font-weight:900}
-    .currentLetter{font-weight:900}
 
-    /* Countdown (right) */
     .rail.clock{background:#e8e3ff}
     .fill.clock{background:#7c5cff}
     .count{font-weight:900; font-variant-numeric: tabular-nums}
@@ -62,12 +58,20 @@
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
+    /* Practice nav (appears from B) */
+    .nav{
+      display:flex; gap:8px; margin-top:6px; visibility:hidden;
+    }
+    .nav button{
+      padding:10px 14px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:#fff; cursor:pointer; font-weight:800;
+    }
+    .nav button[disabled]{opacity:.45; cursor:not-allowed}
+
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
     .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s, opacity .12s}
     .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    /* Click progress + lock */
     .btn1.done{background:#ff7a7a}
     .btn2.done{background:#16c1de}
     .btn3.done{background:#ffe08c;color:#111}
@@ -78,10 +82,9 @@
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
 
-    /* Fireworks */
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* QUIZ (internal only) */
+    /* QUIZ (internal; auto after every 5) */
     #quiz{position:fixed;inset:0;z-index:80;display:none}
     #quiz.active{display:block}
     .q-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -104,22 +107,18 @@
   </style>
 </head>
 <body>
-  <!-- CSS-only Start fallback anchor (no JS needed) -->
   <div id="go"></div>
 
   <div class="bg"></div>
   <div class="overlay"></div>
 
-  <!-- Top bar with meters -->
+  <!-- Top bar -->
   <div class="topbar">
-    <!-- Left: A→Z meter -->
+    <!-- Left: PROGRESS-ONLY A→Z METER -->
     <div class="chip">
-      <span class="lab">A</span>
       <div class="rail" aria-label="A→Z 進捗">
         <div id="azFill" class="fill"></div>
       </div>
-      <span class="lab">Z</span>
-      <span class="currentLetter" id="currentLetter">A</span>
     </div>
 
     <!-- Center: Booha -->
@@ -127,7 +126,7 @@
 
     <!-- Right: purple live countdown -->
     <div class="chip">
-      <span class="lab">次のアンロック</span>
+      <span style="font-weight:900">次のアンロック</span>
       <div class="rail clock" aria-label="24h カウントダウン">
         <div id="cdFill" class="fill clock"></div>
       </div>
@@ -135,7 +134,7 @@
     </div>
   </div>
 
-  <!-- Start / Hello -->
+  <!-- Hello / Start -->
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
@@ -148,13 +147,21 @@
 
   <!-- Letter screen -->
   <div class="letter-screen">
+    <!-- Practice arrows (appear from B; only navigate among FINISHED letters; never past lock) -->
+    <div class="nav" id="nav">
+      <button id="prev">← もどる</button>
+      <button id="next">すすむ →</button>
+    </div>
+
     <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
-    <div class="buttons">
+
+    <div id="btnRow" class="buttons">
       <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
       <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
       <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
+
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
@@ -164,7 +171,7 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- QUIZ (internal; auto after every 5) -->
+  <!-- QUIZ (internal) -->
   <div id="quiz" aria-hidden="true">
     <div class="q-back"></div>
     <div class="q-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
@@ -182,16 +189,14 @@
     </div>
   </div>
 
-  <!-- MAIN APP -->
   <script>
-    /* ---------- Versioned reset: force start at A once after this update ---------- */
-    const APP_VERSION = "abc-2025-10-07AZ";
+    /* ---------- Versioned reset so this build starts at A once ---------- */
+    const APP_VERSION = "abc-2025-10-07AZ-progress-nav";
     const LS_KEY_APP_VERSION = "abc_app_version";
     (function versionReset(){
       try{
         const v = localStorage.getItem(LS_KEY_APP_VERSION);
         if(v !== APP_VERSION){
-          // wipe relevant state to start from A cleanly
           localStorage.removeItem("abc_done_letters");
           localStorage.removeItem("abc_last_test_m");
           localStorage.removeItem("abc_unlock_idx");
@@ -201,52 +206,36 @@
       }catch{}
     })();
 
-    /* ---------- Safety net ---------- */
-    (function trap(){
-      const og = console.error ? console.error.bind(console) : ()=>{};
-      window.addEventListener('error', e => { try{ og('JS error:', e.message); }catch{} }, {capture:true});
-      window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
-    })();
-
-    /* ---------- Audio Manager (no overlapping) ---------- */
+    /* ---------- Audio (no overlap) ---------- */
     let activeAudio = null;
-    function stopActive(){
-      try{
-        if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; }
-      }catch(e){}
-      activeAudio = null;
-    }
-    function playSound(src){
-      stopActive();
-      try{
-        activeAudio = new Audio(src);
-        activeAudio.play().catch(()=>{});
-      }catch(e){}
-    }
+    function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; } }catch(e){} activeAudio=null; }
+    function playSound(src){ stopActive(); try{ activeAudio = new Audio(src); activeAudio.play().catch(()=>{});}catch(e){} }
     window.addEventListener('pagehide', stopActive);
     window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
     /* ---------- Constants & DOM ---------- */
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(); // 26
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26
     const MAX_IDX = 25; // A..Z
     const TOTAL_LETTERS = 26;
     const H24 = 24*60*60*1000;
 
-    // LocalStorage keys
-    const LS_KEY_DONE = "abc_done_letters";      // ordered array of finished letters (["A","B",...])
-    const LS_KEY_LAST_TEST = "abc_last_test_m";  // last milestone group number
-    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked letter index (0-based)
-    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // timestamp ms when next letter unlocks (0 if none scheduled)
+    // Keys
+    const LS_KEY_DONE = "abc_done_letters";      // ["A","B",...]
+    const LS_KEY_LAST_TEST = "abc_last_test_m";  // milestone group count
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked 0-based
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // ms timestamp
 
     // DOM
-    const hello = document.getElementById("hello");
-
     const azFill = document.getElementById("azFill");
-    const currentLetterEl = document.getElementById("currentLetter");
     const cdFill = document.getElementById("cdFill");
     const cdText = document.getElementById("cdText");
 
+    const nav = document.getElementById("nav");
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+
     const letterImg = document.getElementById("letterImg");
+    const btnRow = document.getElementById("btnRow");
     const btn1 = document.getElementById("btn1");
     const btn2 = document.getElementById("btn2");
     const btn3 = document.getElementById("btn3");
@@ -256,7 +245,7 @@
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
 
-    // Quiz modal
+    // Quiz
     const quiz = document.getElementById("quiz");
     const qGrid = document.getElementById("qGrid");
     const qPlay = document.getElementById("qPlay");
@@ -264,32 +253,20 @@
     const qClose = document.getElementById("qClose");
     const qProgress = document.getElementById("qProgress");
 
-    /* ---------- App state ---------- */
+    /* ---------- State ---------- */
     let letterIdx = 0; // 0=A
-    let doneList = loadDoneList();                 // ordered list
-    let doneSet = new Set(doneList);               // fast lookup
+    let doneList = loadDoneList();       // ordered
+    let doneSet = new Set(doneList);     // fast lookup
     let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
-    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);             // A unlocked by default
+    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0); // unlocked boundary (A at start)
     let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
-    let currentStep = 1; // 1..4 order enforcement
+    let currentStep = 1; // 1..4
 
     /* ---------- Helpers ---------- */
-    function loadDoneList(){
-      try{
-        const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]");
-        return Array.isArray(raw) ? raw : [];
-      }catch{ return []; }
-    }
-    function saveDone(){
-      try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{}
-    }
-    function loadNumber(key, def){
-      const n = Number(localStorage.getItem(key) ?? def);
-      return Number.isFinite(n) ? n : def;
-    }
-    function saveNumber(key, val){
-      try{ localStorage.setItem(key, String(val)); }catch{}
-    }
+    function loadDoneList(){ try{ const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]"); return Array.isArray(raw)?raw:[]; }catch{ return []; } }
+    function saveDone(){ try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{} }
+    function loadNumber(k, d){ const n=Number(localStorage.getItem(k) ?? d); return Number.isFinite(n)?n:d; }
+    function saveNumber(k, v){ try{ localStorage.setItem(k, String(v)); }catch{} }
 
     function getCardBase(i){ return i*4; }
     function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; } // 1,5,9,...
@@ -301,11 +278,20 @@
       letterImg.alt = `レター画像`;
     }
 
-    function setAZMeter(){
-      // Track unlocked boundary (progress from A→Z), and show current letter
-      const pct = (unlockIdx/25)*100;
+    function showFinal(){
+      // After Z is done, show finished.jpg and hide controls
+      letterImg.src = './finished.jpg';
+      letterImg.alt = 'FINISHED';
+      btnRow.style.display = 'none';
+      finishBtn.style.display = 'none';
+      nav.style.visibility = 'visible'; // allow browsing finished letters if desired
+      prev.disabled = getPrevFinished(letterIdx) === null;
+      next.disabled = true; // nothing beyond finished page
+    }
+
+    function updateProgressMeter(){
+      const pct = (doneSet.size / TOTAL_LETTERS) * 100; // progress only
       azFill.style.width = pct + "%";
-      currentLetterEl.textContent = letters[letterIdx];
     }
 
     function now(){ return Date.now(); }
@@ -317,8 +303,7 @@
       const ss = s%60;
       return `${hh}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
     }
-    function setCountdown(){
-      // Fill represents progress toward next unlock (0%→100%)
+    function updateCountdown(){
       if (nextUnlockMs > 0 && now() < nextUnlockMs){
         const remain = nextUnlockMs - now();
         const pct = Math.max(0, Math.min(100, (1 - (remain / H24)) * 100));
@@ -335,124 +320,189 @@
 
     function refreshUnlocks(){
       if (nextUnlockMs > 0 && now() >= nextUnlockMs && unlockIdx < MAX_IDX){
-        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX); // unlock next letter
-        nextUnlockMs = 0; // wait until finishing this letter to schedule next
+        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX);
+        nextUnlockMs = 0;
         saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
-      setAZMeter();
-      setCountdown();
+      updateCountdown();
+      updateProgressMeter();
+      updateNavVisibility();
     }
     setInterval(refreshUnlocks, 1000);
     window.addEventListener('focus', refreshUnlocks);
 
     function clampToUnlocked(i){ return Math.max(0, Math.min(i, unlockIdx)); }
 
-    function resetButtonsVisual(){ btns.forEach(b=> b.classList.remove('done','locked')); }
+    function resetButtons(){ btns.forEach(b=> b.classList.remove('done','locked')); }
     function lockButtonsByStep(){
       btns.forEach((b,idx)=>{
         const step = idx+1;
         b.classList.toggle('locked', step>currentStep);
         b.classList.toggle('done', step<currentStep);
       });
-      finishBtn.style.display = (currentStep>4) ? 'inline-block' : 'none';
+      // Single-use: show only if letter not done yet
+      const show = (currentStep>4) && !doneSet.has(letters[letterIdx]);
+      finishBtn.style.display = show ? 'inline-block' : 'none';
     }
 
-    function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
+    /* ---------- Practice Nav (finished letters only) ---------- */
+    function getFinishedIndicesSorted(){
+      return doneList.map(L=>letters.indexOf(L)).filter(i=>i>=0).sort((a,b)=>a-b);
+    }
+    function getPrevFinished(fromIdx){
+      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx)); // never past lock
+      let prev = null;
+      for(const i of arr){ if(i < fromIdx) prev = i; else break; }
+      return prev;
+    }
+    function getNextFinished(fromIdx){
+      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx));
+      for(const i of arr){
+        if(i > fromIdx) return i;
+      }
+      return null;
+    }
+    function updateNavVisibility(){
+      // Appear from B (when at least index 1 is unlocked)
+      nav.style.visibility = (unlockIdx >= 1) ? 'visible' : 'hidden';
+      // When viewing a finished letter, enable prev/next among finished only
+      if (doneSet.has(letters[letterIdx])){
+        prev.disabled = (getPrevFinished(letterIdx) === null);
+        next.disabled = (getNextFinished(letterIdx) === null);
+      }else{
+        // If on an unfinished letter, allow moving to nearest finished (but not forward beyond lock)
+        prev.disabled = (getPrevFinished(letterIdx) === null);
+        next.disabled = (getNextFinished(letterIdx) === null);
+      }
+    }
+
+    prev.onclick = ()=>{
+      const p = getPrevFinished(letterIdx);
+      if(p === null) return;
+      letterIdx = p;
+      currentStep = 5; // finished letter -> review mode
+      stopActive(); resetButtons(); lockButtonsByStep();
+      showCard(1); // show first card of that set
+      updateNavVisibility();
+    };
+    next.onclick = ()=>{
+      const n = getNextFinished(letterIdx);
+      if(n === null) return;
+      letterIdx = n;
+      currentStep = 5;
+      stopActive(); resetButtons(); lockButtonsByStep();
+      showCard(1);
+      updateNavVisibility();
+    };
+
+    /* ---------- Letter audio ---------- */
     function playLetterTimes(times){
       const L = letters[letterIdx];
-      const name = L.repeat(times); // "A","AA","AAA","AAAA"
+      const name = L.repeat(times); // A, AA, AAA, AAAA
       const src = `assets/audio/${name}.m4a`;
       playSound(src);
     }
-    function playLetterCueByIndex(idx){
-      const L = letters[idx];
-      qHint.textContent = `（${L} の音）`;
-      playSound(`assets/audio/${L}.m4a`);
-    }
 
+    /* ---------- Start ---------- */
     function firstUnfinishedUnlocked(){
       for (let i=0;i<=unlockIdx;i++){
         if (!doneSet.has(letters[i])) return i;
       }
-      return unlockIdx; // all unlocked finished -> stay on boundary
+      return unlockIdx;
     }
-
-    /* ---------- Start ---------- */
     function startAppFull(){
       startApp();
       refreshUnlocks();
       letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
       currentStep = doneSet.has(letters[letterIdx]) ? 5 : 1;
-      resetButtonsVisual(); lockButtonsByStep();
-      showCard(1);
-      setAZMeter();
-      setCountdown();
+      btnRow.style.display = ''; // ensure visible in case returning from final
+      resetButtons(); lockButtonsByStep();
+      if(doneSet.size === TOTAL_LETTERS){
+        showFinal();
+      }else{
+        showCard(1);
+      }
+      updateProgressMeter();
+      updateNavVisibility();
     }
     window.startAppFull = startAppFull;
-
     if(location.hash === '#go'){ startAppFull(); }
 
-    /* ---------- Buttons (order enforced) ---------- */
+    /* ---------- Step handlers (order enforced) ---------- */
     btn1.onclick = ()=> handleStep(1);
     btn2.onclick = ()=> handleStep(2);
     btn3.onclick = ()=> handleStep(3);
     btn4.onclick = ()=> handleStep(4);
 
     function handleStep(step){
+      // If all finished, ignore steps
+      if(doneSet.size === TOTAL_LETTERS) return;
+
       if(step !== currentStep) return; // enforce ①→②→③→④
       showCard(step);
+
+      // No audio on the global "finished.jpg" — only letter sets have audio
       playLetterTimes(step);
+
       currentStep++;
       lockButtonsByStep();
     }
 
-    /* ---------- Finish current letter ---------- */
+    /* ---------- Finish current letter (single-use per set) ---------- */
     function maybeOpenQuizAfterFinish(){
       const groupsDone = Math.floor(doneSet.size / 5); // 5,10,15,20,25
-      if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
-        lastMilestoneDone = groupsDone;
+      const lastStored = loadNumber(LS_KEY_LAST_TEST, 0);
+      if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastStored){
         localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
         openQuiz();
       }
     }
 
     finishBtn.onclick = ()=>{
-      playClick();
+      // Single-use: if already finished, do nothing
       const L = letters[letterIdx];
-      if(!doneSet.has(L)){
-        doneSet.add(L);
-        doneList.push(L);
-        saveDone();
-      }
+      if(doneSet.has(L)) return;
+
+      try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{}
+
+      doneSet.add(L);
+      doneList.push(L);
+      saveDone();
 
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(2000);
-      finishBtn.style.display='none';
+      finishBtn.style.display='none'; // one click per set
 
-      // Schedule next unlock (24h) ONLY when finishing the current highest unlocked letter
+      // Schedule next unlock (24h) when finishing the current boundary
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
         nextUnlockMs = now() + H24;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
 
-      // Quiz (every 5th finish)
-      maybeOpenQuizAfterFinish();
+      updateProgressMeter();
+      updateNavVisibility();
 
-      // Reset step for review
-      currentStep = 1;
-      resetButtonsVisual(); lockButtonsByStep();
-      showCard(1);
-      setAZMeter();
-      setCountdown();
+      // Last letter completed? Show final card (no audio, no buttons)
+      if(doneSet.size === TOTAL_LETTERS){
+        showFinal();
+      }else{
+        // Quiz every 5 letters
+        maybeOpenQuizAfterFinish();
+        // Reset for review
+        currentStep = 1;
+        resetButtons(); lockButtonsByStep();
+        showCard(1);
+      }
     };
 
-    /* ---------- Fireworks (2s confetti) ---------- */
-    const canvas = document.getElementById("confetti");
+    /* ---------- Confetti ---------- */
+    const canvas = document.createElement('canvas');
+    canvas.id = 'confetti';
+    document.body.appendChild(canvas);
     const ctx = canvas.getContext("2d");
     function startFireworks(duration){
-      let confettiRunning=true;
-      resize();
+      let confettiRunning=true; resize();
       const pieces = Array.from({length:260}).map(()=>({
         x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
         r: Math.random()*8+3, d: Math.random()*1+0.5, c: `hsl(${Math.random()*360},100%,50%)`
@@ -472,16 +522,22 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ---------- QUIZ LOGIC ---------- */
+    /* ---------- QUIZ ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
-
+    function playLetterCueByIndex(idx){
+      const L = letters[idx];
+      qHint.textContent = `（${L} の音）`;
+      playSound(`assets/audio/${L}.m4a`);
+    }
     function openQuiz(){
-      const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
-      let pool = recent.length >= 4 ? recent : Array.from({length:Math.min(unlockIdx+1, MAX_IDX+1)}, (_,i)=>i);
+      qGrid.innerHTML = '';
+      // use 4 options from most recent 5 finished; fallback to all <= unlock boundary
+      const finishedIdx = doneList.map(L=>letters.indexOf(L));
+      const recent = finishedIdx.slice(-5).filter(i=>i>=0 && i<=unlockIdx);
+      let pool = recent.length>=4 ? recent : Array.from({length:unlockIdx+1}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
 
-      qGrid.innerHTML = '';
       for(const idx of pool){
         const btn = document.createElement('button');
         btn.type='button'; btn.className='q-item';
@@ -505,7 +561,6 @@
       }
 
       qPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-
       qHint.textContent = '';
       qClose.style.display = 'none';
       qProgress.textContent = '1 / 1';
@@ -517,7 +572,6 @@
       quiz.addEventListener('click', backdropClose, {once:true});
       qClose.onclick = closeQuiz;
     }
-
     function closeQuiz(){ quiz.classList.remove('active'); stopActive(); }
   </script>
 </body>
