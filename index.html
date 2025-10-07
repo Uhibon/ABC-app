@@ -35,7 +35,7 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar: progress (left), Booha (center), countdown (right) */
+    /* Top bar */
     .topbar{
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
       padding:10px 16px;
@@ -46,6 +46,7 @@
       padding:8px 12px; display:flex; align-items:center; gap:10px;
       box-shadow:0 6px 14px rgba(0,0,0,.06);
     }
+    .lab{font-weight:900}
     .rail{position:relative; width:200px; height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
     .fill{position:absolute; inset:0 auto 0 0; width:0; height:100%; background:#ff4da6}
 
@@ -84,7 +85,7 @@
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* QUIZ (internal; auto after every 5) */
+    /* QUIZ (internal) */
     #quiz{position:fixed;inset:0;z-index:80;display:none}
     #quiz.active{display:block}
     .q-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -114,11 +115,13 @@
 
   <!-- Top bar -->
   <div class="topbar">
-    <!-- Left: PROGRESS-ONLY A→Z METER -->
+    <!-- Left: PROGRESS A→Z METER with labels -->
     <div class="chip">
+      <span class="lab">A</span>
       <div class="rail" aria-label="A→Z 進捗">
         <div id="azFill" class="fill"></div>
       </div>
+      <span class="lab">Z</span>
     </div>
 
     <!-- Center: Booha -->
@@ -126,7 +129,7 @@
 
     <!-- Right: purple live countdown -->
     <div class="chip">
-      <span style="font-weight:900">次のアンロック</span>
+      <span class="lab">次のアンロック</span>
       <div class="rail clock" aria-label="24h カウントダウン">
         <div id="cdFill" class="fill clock"></div>
       </div>
@@ -147,7 +150,7 @@
 
   <!-- Letter screen -->
   <div class="letter-screen">
-    <!-- Practice arrows (appear from B; only navigate among FINISHED letters; never past lock) -->
+    <!-- Practice arrows (from B; finished letters only; never past lock) -->
     <div class="nav" id="nav">
       <button id="prev">← もどる</button>
       <button id="next">すすむ →</button>
@@ -191,7 +194,7 @@
 
   <script>
     /* ---------- Versioned reset so this build starts at A once ---------- */
-    const APP_VERSION = "abc-2025-10-07AZ-progress-nav";
+    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v2";
     const LS_KEY_APP_VERSION = "abc_app_version";
     (function versionReset(){
       try{
@@ -284,7 +287,7 @@
       letterImg.alt = 'FINISHED';
       btnRow.style.display = 'none';
       finishBtn.style.display = 'none';
-      nav.style.visibility = 'visible'; // allow browsing finished letters if desired
+      nav.style.visibility = 'visible';
       prev.disabled = getPrevFinished(letterIdx) === null;
       next.disabled = true; // nothing beyond finished page
     }
@@ -351,7 +354,7 @@
       return doneList.map(L=>letters.indexOf(L)).filter(i=>i>=0).sort((a,b)=>a-b);
     }
     function getPrevFinished(fromIdx){
-      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx)); // never past lock
+      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx));
       let prev = null;
       for(const i of arr){ if(i < fromIdx) prev = i; else break; }
       return prev;
@@ -364,14 +367,11 @@
       return null;
     }
     function updateNavVisibility(){
-      // Appear from B (when at least index 1 is unlocked)
       nav.style.visibility = (unlockIdx >= 1) ? 'visible' : 'hidden';
-      // When viewing a finished letter, enable prev/next among finished only
       if (doneSet.has(letters[letterIdx])){
         prev.disabled = (getPrevFinished(letterIdx) === null);
         next.disabled = (getNextFinished(letterIdx) === null);
       }else{
-        // If on an unfinished letter, allow moving to nearest finished (but not forward beyond lock)
         prev.disabled = (getPrevFinished(letterIdx) === null);
         next.disabled = (getNextFinished(letterIdx) === null);
       }
@@ -381,9 +381,9 @@
       const p = getPrevFinished(letterIdx);
       if(p === null) return;
       letterIdx = p;
-      currentStep = 5; // finished letter -> review mode
+      currentStep = 5;
       stopActive(); resetButtons(); lockButtonsByStep();
-      showCard(1); // show first card of that set
+      showCard(1);
       updateNavVisibility();
     };
     next.onclick = ()=>{
@@ -416,7 +416,7 @@
       refreshUnlocks();
       letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
       currentStep = doneSet.has(letters[letterIdx]) ? 5 : 1;
-      btnRow.style.display = ''; // ensure visible in case returning from final
+      btnRow.style.display = '';
       resetButtons(); lockButtonsByStep();
       if(doneSet.size === TOTAL_LETTERS){
         showFinal();
@@ -436,15 +436,10 @@
     btn4.onclick = ()=> handleStep(4);
 
     function handleStep(step){
-      // If all finished, ignore steps
       if(doneSet.size === TOTAL_LETTERS) return;
-
-      if(step !== currentStep) return; // enforce ①→②→③→④
+      if(step !== currentStep) return;
       showCard(step);
-
-      // No audio on the global "finished.jpg" — only letter sets have audio
       playLetterTimes(step);
-
       currentStep++;
       lockButtonsByStep();
     }
@@ -460,9 +455,8 @@
     }
 
     finishBtn.onclick = ()=>{
-      // Single-use: if already finished, do nothing
       const L = letters[letterIdx];
-      if(doneSet.has(L)) return;
+      if(doneSet.has(L)) return; // single-use
 
       try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{}
 
@@ -471,39 +465,33 @@
       saveDone();
 
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-      startFireworks(2000);
-      finishBtn.style.display='none'; // one click per set
+      startFireworks(4000); /* longer confetti on finish */
+      finishBtn.style.display = 'none';
 
-      // Schedule next unlock (24h) when finishing the current boundary
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
-        nextUnlockMs = now() + H24;
+        nextUnlockMs = Date.now() + H24;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
 
       updateProgressMeter();
       updateNavVisibility();
 
-      // Last letter completed? Show final card (no audio, no buttons)
       if(doneSet.size === TOTAL_LETTERS){
         showFinal();
       }else{
-        // Quiz every 5 letters
         maybeOpenQuizAfterFinish();
-        // Reset for review
         currentStep = 1;
         resetButtons(); lockButtonsByStep();
         showCard(1);
       }
     };
 
-    /* ---------- Confetti ---------- */
-    const canvas = document.createElement('canvas');
-    canvas.id = 'confetti';
-    document.body.appendChild(canvas);
+    /* ---------- Confetti (longer) ---------- */
+    const canvas = document.getElementById('confetti');
     const ctx = canvas.getContext("2d");
     function startFireworks(duration){
       let confettiRunning=true; resize();
-      const pieces = Array.from({length:260}).map(()=>({
+      const pieces = Array.from({length:320}).map(()=>({
         x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
         r: Math.random()*8+3, d: Math.random()*1+0.5, c: `hsl(${Math.random()*360},100%,50%)`
       }));
@@ -522,7 +510,7 @@
     function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
     resize();
 
-    /* ---------- QUIZ ---------- */
+    /* ---------- QUIZ (confetti longer too) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
     function playLetterCueByIndex(idx){
       const L = letters[idx];
@@ -531,7 +519,6 @@
     }
     function openQuiz(){
       qGrid.innerHTML = '';
-      // use 4 options from most recent 5 finished; fallback to all <= unlock boundary
       const finishedIdx = doneList.map(L=>letters.indexOf(L));
       const recent = finishedIdx.slice(-5).filter(i=>i>=0 && i<=unlockIdx);
       let pool = recent.length>=4 ? recent : Array.from({length:unlockIdx+1}, (_,i)=>i);
@@ -551,7 +538,7 @@
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
             [...qGrid.querySelectorAll('.q-item')].forEach(b=>b.disabled=true);
-            startFireworks(2000);
+            startFireworks(4000); /* longer confetti on quiz win */
             qClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
