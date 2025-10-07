@@ -2,7 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ff4da6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>ブーハー ABC スターター</title>
 
   <script>
@@ -17,7 +19,10 @@
   </script>
 
   <style>
+    :root { --vh: 100vh; } /* will be corrected by JS on mobile */
+
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    body{ -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
 
@@ -38,7 +43,7 @@
     /* Top bar */
     .topbar{
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
-      padding:10px 16px;
+      padding:10px 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
     }
     .chip{
       background:#ffffffcc; backdrop-filter:saturate(1.2) blur(2px);
@@ -54,8 +59,12 @@
     .fill.clock{background:#7c5cff}
     .count{font-weight:900; font-variant-numeric: tabular-nums}
 
-    /* Letter screen */
-    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 96px);padding:16px;gap:16px;text-align:center}
+    /* Letter screen: use --vh to avoid mobile 100vh bugs */
+    .letter-screen{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      height:calc(var(--vh) - 96px); /* was calc(100vh - 96px) */
+      padding:16px;gap:16px;text-align:center
+    }
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
@@ -64,7 +73,7 @@
       display:flex; gap:8px; margin-top:6px; visibility:hidden;
     }
     .nav button{
-      padding:10px 14px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:#fff; cursor:pointer; font-weight:800;
+      padding:12px 16px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:#fff; cursor:pointer; font-weight:800;
     }
     .nav button[disabled]{opacity:.45; cursor:not-allowed}
 
@@ -144,7 +153,7 @@
       <h1>スターターアプリへようこそ！</h1>
       <p>このアプリをホーム画面に追加してください。</p>
       <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
-      <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
+      <a class="start-link" href="#go" id="startLink">スタート</a>
     </div>
   </div>
 
@@ -152,20 +161,22 @@
   <div class="letter-screen">
     <!-- Practice arrows (from B; finished letters only; never past lock) -->
     <div class="nav" id="nav">
-      <button id="prev">← もどる</button>
-      <button id="next">すすむ →</button>
+      <button id="prev" type="button">← もどる</button>
+      <button id="next" type="button">すすむ →</button>
     </div>
 
-    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
+    <div class="card-wrap">
+      <img id="letterImg" src="./1.jpg" alt="レター画像" loading="eager" decoding="async" />
+    </div>
 
     <div id="btnRow" class="buttons">
-      <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
-      <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
-      <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
-      <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
+      <button id="btn1" type="button" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
+      <button id="btn2" type="button" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
+      <button id="btn3" type="button" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
+      <button id="btn4" type="button" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
 
-    <button id="finishBtn" class="btn-finish">できた！</button>
+    <button id="finishBtn" type="button" class="btn-finish">できた！</button>
   </div>
 
   <canvas id="confetti"></canvas>
@@ -181,20 +192,24 @@
       <h2 id="quizTitle" class="q-title">クイズ</h2>
       <p class="q-prompt">音声を聞いて、正しい<strong>文字</strong>をえらぼう！</p>
       <div class="q-ctrl">
-        <button id="qPlay" class="q-btn">▶︎ 再生</button>
+        <button id="qPlay" type="button" class="q-btn">▶︎ 再生</button>
         <span id="qHint" class="q-hint"></span>
       </div>
       <div id="qGrid" class="q-grid"></div>
       <div class="q-bottom">
         <div id="qProgress" class="q-progress">1 / 1</div>
-        <button id="qClose" class="q-btn q-ok" style="display:none">OK</button>
+        <button id="qClose" type="button" class="q-btn q-ok" style="display:none">OK</button>
       </div>
     </div>
   </div>
 
   <script>
-    /* ---------- Versioned reset so this build starts at A once ---------- */
-    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v2";
+    /* ---------- Viewport fix for mobile 100vh ---------- */
+    function setVH(){ document.documentElement.style.setProperty('--vh', window.innerHeight + 'px'); }
+    setVH(); window.addEventListener('resize', setVH); window.addEventListener('orientationchange', setVH);
+
+    /* ---------- Versioned reset (bump to clear stale cache on mobile) ---------- */
+    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v3";
     const LS_KEY_APP_VERSION = "abc_app_version";
     (function versionReset(){
       try{
@@ -209,6 +224,11 @@
       }catch{}
     })();
 
+    /* ---------- Start link: make sure tap always triggers init ---------- */
+    const startLink = document.getElementById('startLink');
+    startLink.addEventListener('click', (e)=>{ startAppFull(); });
+    startLink.addEventListener('touchstart', ()=>{ startAppFull(); }, {passive:true});
+
     /* ---------- Audio (no overlap) ---------- */
     let activeAudio = null;
     function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; } }catch(e){} activeAudio=null; }
@@ -218,17 +238,13 @@
 
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26
-    const MAX_IDX = 25; // A..Z
-    const TOTAL_LETTERS = 26;
-    const H24 = 24*60*60*1000;
+    const MAX_IDX = 25; const TOTAL_LETTERS = 26; const H24 = 24*60*60*1000;
 
-    // Keys
-    const LS_KEY_DONE = "abc_done_letters";      // ["A","B",...]
-    const LS_KEY_LAST_TEST = "abc_last_test_m";  // milestone group count
-    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";  // highest unlocked 0-based
-    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms"; // ms timestamp
+    const LS_KEY_DONE = "abc_done_letters";
+    const LS_KEY_LAST_TEST = "abc_last_test_m";
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";
 
-    // DOM
     const azFill = document.getElementById("azFill");
     const cdFill = document.getElementById("cdFill");
     const cdText = document.getElementById("cdText");
@@ -248,7 +264,6 @@
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
 
-    // Quiz
     const quiz = document.getElementById("quiz");
     const qGrid = document.getElementById("qGrid");
     const qPlay = document.getElementById("qPlay");
@@ -257,13 +272,13 @@
     const qProgress = document.getElementById("qProgress");
 
     /* ---------- State ---------- */
-    let letterIdx = 0; // 0=A
-    let doneList = loadDoneList();       // ordered
-    let doneSet = new Set(doneList);     // fast lookup
+    let letterIdx = 0;
+    let doneList = loadDoneList();
+    let doneSet = new Set(doneList);
     let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
-    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0); // unlocked boundary (A at start)
+    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);
     let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
-    let currentStep = 1; // 1..4
+    let currentStep = 1;
 
     /* ---------- Helpers ---------- */
     function loadDoneList(){ try{ const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]"); return Array.isArray(raw)?raw:[]; }catch{ return []; } }
@@ -272,28 +287,27 @@
     function saveNumber(k, v){ try{ localStorage.setItem(k, String(v)); }catch{} }
 
     function getCardBase(i){ return i*4; }
-    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; } // 1,5,9,...
+    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; }
 
     function showCard(n){
       const base = getCardBase(Math.min(letterIdx, MAX_IDX));
-      const num = base + n; // 1..4
+      const num = base + n;
       letterImg.src = `./${num}.jpg`;
       letterImg.alt = `レター画像`;
     }
 
     function showFinal(){
-      // After Z is done, show finished.jpg and hide controls
       letterImg.src = './finished.jpg';
       letterImg.alt = 'FINISHED';
       btnRow.style.display = 'none';
       finishBtn.style.display = 'none';
       nav.style.visibility = 'visible';
       prev.disabled = getPrevFinished(letterIdx) === null;
-      next.disabled = true; // nothing beyond finished page
+      next.disabled = true;
     }
 
     function updateProgressMeter(){
-      const pct = (doneSet.size / TOTAL_LETTERS) * 100; // progress only
+      const pct = (doneSet.size / TOTAL_LETTERS) * 100;
       azFill.style.width = pct + "%";
     }
 
@@ -344,7 +358,6 @@
         b.classList.toggle('locked', step>currentStep);
         b.classList.toggle('done', step<currentStep);
       });
-      // Single-use: show only if letter not done yet
       const show = (currentStep>4) && !doneSet.has(letters[letterIdx]);
       finishBtn.style.display = show ? 'inline-block' : 'none';
     }
@@ -354,27 +367,20 @@
       return doneList.map(L=>letters.indexOf(L)).filter(i=>i>=0).sort((a,b)=>a-b);
     }
     function getPrevFinished(fromIdx){
-      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx));
+      const arr = getFinishedIndicesSorted().filter(i=>i<=unlockIdx);
       let prev = null;
       for(const i of arr){ if(i < fromIdx) prev = i; else break; }
       return prev;
     }
     function getNextFinished(fromIdx){
-      const arr = getFinishedIndicesSorted().filter(i=>i<=(unlockIdx));
-      for(const i of arr){
-        if(i > fromIdx) return i;
-      }
+      const arr = getFinishedIndicesSorted().filter(i=>i<=unlockIdx);
+      for(const i of arr){ if(i > fromIdx) return i; }
       return null;
     }
     function updateNavVisibility(){
       nav.style.visibility = (unlockIdx >= 1) ? 'visible' : 'hidden';
-      if (doneSet.has(letters[letterIdx])){
-        prev.disabled = (getPrevFinished(letterIdx) === null);
-        next.disabled = (getNextFinished(letterIdx) === null);
-      }else{
-        prev.disabled = (getPrevFinished(letterIdx) === null);
-        next.disabled = (getNextFinished(letterIdx) === null);
-      }
+      prev.disabled = (getPrevFinished(letterIdx) === null);
+      next.disabled = (getNextFinished(letterIdx) === null);
     }
 
     prev.onclick = ()=>{
@@ -418,11 +424,7 @@
       currentStep = doneSet.has(letters[letterIdx]) ? 5 : 1;
       btnRow.style.display = '';
       resetButtons(); lockButtonsByStep();
-      if(doneSet.size === TOTAL_LETTERS){
-        showFinal();
-      }else{
-        showCard(1);
-      }
+      if(doneSet.size === TOTAL_LETTERS){ showFinal(); } else { showCard(1); }
       updateProgressMeter();
       updateNavVisibility();
     }
@@ -456,13 +458,10 @@
 
     finishBtn.onclick = ()=>{
       const L = letters[letterIdx];
-      if(doneSet.has(L)) return; // single-use
+      if(doneSet.has(L)) return;
 
       try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{}
-
-      doneSet.add(L);
-      doneList.push(L);
-      saveDone();
+      doneSet.add(L); doneList.push(L); saveDone();
 
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
       startFireworks(4000); /* longer confetti on finish */
@@ -473,8 +472,7 @@
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
 
-      updateProgressMeter();
-      updateNavVisibility();
+      updateProgressMeter(); updateNavVisibility();
 
       if(doneSet.size === TOTAL_LETTERS){
         showFinal();
@@ -506,9 +504,7 @@
         else { ctx.clearRect(0,0,canvas.width,canvas.height); confettiRunning=false; }
       })();
     }
-    window.onresize = resize;
-    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-    resize();
+    window.onresize = resize; function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; } resize();
 
     /* ---------- QUIZ (confetti longer too) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
@@ -538,7 +534,7 @@
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
             [...qGrid.querySelectorAll('.q-item')].forEach(b=>b.disabled=true);
-            startFireworks(4000); /* longer confetti on quiz win */
+            startFireworks(4000);
             qClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
@@ -548,9 +544,7 @@
       }
 
       qPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-      qHint.textContent = '';
-      qClose.style.display = 'none';
-      qProgress.textContent = '1 / 1';
+      qHint.textContent = ''; qClose.style.display = 'none'; qProgress.textContent = '1 / 1';
       quiz.classList.add('active');
 
       playLetterCueByIndex(correctIdx);
