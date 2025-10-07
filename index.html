@@ -1,55 +1,593 @@
-const CACHE = "booha-abc-v1";
-const CORE = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./playful-pink-booha.png",
-  "./booha-background.jpg"
-  // Add any UI sounds you want guaranteed offline:
-  // "assets/sfx/click.mp3",
-  // "assets/sfx/magic.mp3",
-  // "assets/sfx/cheer.mp3"
-];
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Booha Starter ABC – ブーハABC スターター</title>
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)));
-  self.skipWaiting();
-});
+  <!-- PWA manifest + install name/icon -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#ff4da6">
+  <link rel="icon" type="image/png" sizes="192x192" href="playful-pink-booha.png">
+  <link rel="apple-touch-icon" href="playful-pink-booha.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Booha Starter ABC">
+  <meta name="application-name" content="Booha Starter ABC">
+  <meta property="og:title" content="Booha Starter ABC">
+  <meta property="og:image" content="playful-pink-booha.png">
 
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
+  <!-- Minimal early fallback -->
+  <script>
+    function startApp(){
+      const hello = document.getElementById('hello');
+      if (hello) hello.style.display = 'none';
+      const img = document.getElementById('letterImg');
+      if (img) { img.src = './1.jpg'; img.alt = 'レター画像'; }
+    }
+    window.startApp = startApp;
+  </script>
 
-// Cache-first for images/audio; network-first for HTML/JS/CSS (so updates ship)
-self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-  const isMedia = /\.(jpg|jpeg|png|gif|webp|m4a|mp3|ogg)$/i.test(url.pathname);
-  const isDoc = e.request.destination === "document" || /\.(html)$/.test(url.pathname);
-  const isAsset = e.request.destination === "script" || e.request.destination === "style" || /\.(js|css)$/.test(url.pathname);
+  <style>
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
+    .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
+    #go:target ~ #hello{display:none}
 
-  if (isMedia) {
-    e.respondWith(
-      caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-        return res;
-      }).catch(() => hit))
-    );
-    return;
-  }
+    /* Hello / Start */
+    .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
+    .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
+    .hello-card h1{margin:12px 0 6px;font-size:24px;line-height:1.2}
+    .hello-card p{margin:8px 0;font-size:14px;color:#444}
+    .start-link{
+      display:inline-block;margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;text-decoration:none;
+      background:#ff4da6;color:#fff;border-radius:14px;box-shadow:0 10px 18px rgba(255,77,166,.28);cursor:pointer
+    }
+    .start-link:active{transform:scale(.98)}
 
-  if (isDoc || isAsset) {
-    e.respondWith(
-      fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-        return res;
-      }).catch(() => caches.match(e.request))
-    );
-  }
-});
+    /* Top bar: A–Z left, countdown right */
+    .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
+    .left{display:flex;align-items:center;gap:12px}
+    .where{font-weight:800;min-width:3ch}
+    .azwrap{display:flex;align-items:center;gap:8px}
+    .azlabel{font-size:12px;font-weight:800;color:#333;min-width:1.2em;text-align:center}
+    .azmeter{width:180px}
+    .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
+    .bar>i{display:block;height:100%;background:#ff4da6;width:0%} /* A–Z position */
+
+    .right{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:320px}
+    .lockline{font-size:12px;color:#111;display:flex;align-items:center;gap:6px;font-weight:900} /* bold live timer */
+    .clock{font-variant-numeric:tabular-nums}
+    .lockmeter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);overflow:hidden}
+    .lockmeter i{position:absolute;left:0;top:0;height:100%;width:0%;background:#7c3aed;transition:width .6s}
+    .lock-unlocked{color:#16a34a;font-weight:900}
+
+    /* Letter screen */
+    .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 108px);padding:16px;gap:16px;text-align:center}
+    .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
+    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
+
+    .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
+    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s}
+    .btn-audio .num{font-size:26px}
+    .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
+    .btn-audio:active{transform:scale(.94)}
+    .btn1.done{background:#ff7a7a}
+    .btn2.done{background:#16c1de}
+    .btn3.done{background:#ffe08c;color:#111}
+    .btn4.done{background:#9a86ff}
+    .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
+
+    .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
+    .btn-finish:active{transform:scale(.96)}
+
+    /* Letter nav (appears after B unlocks) */
+    .nav{position:fixed;left:0;right:0;bottom:10px;display:flex;gap:10px;justify-content:center;z-index:40;visibility:hidden;opacity:0;transition:opacity .2s}
+    .nav.show{visibility:visible;opacity:1}
+    .nbtn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
+    .nbtn:active{transform:scale(.98)}
+
+    canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
+    canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
+
+    /* TEST PAGE (auto only) */
+    #test{position:fixed;inset:0;z-index:80;display:none}
+    #test.active{display:block}
+    .t-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
+    .t-card{position:relative;z-index:81;background:#fff;border-radius:20px;max-width:900px;margin:6vh auto;padding:16px 16px 18px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+    .t-title{margin:6px 0 2px;font-size:24px}
+    .t-prompt{margin:4px 0 12px;color:#444}
+    .t-ctrl{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .t-grid{display:grid;gap:12px;grid-template-columns:repeat(4,1fr)}
+    .t-item{background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;transition:transform .1s, border-color .12s}
+    .t-item img{width:100%;height:170px;object-fit:contain}
+    .t-item:active{transform:scale(.98)}
+    .t-item.correct{border-color:#22c55e}
+    .t-item.wrong{border-color:#ef4444}
+    .t-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .t-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
+    .t-ok{background:#28a745}
+    .t-progress{font-weight:800}
+    .t-hint{display:none}
+    @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
+  </style>
+</head>
+<body>
+  <div id="go"></div>
+  <div class="bg"></div>
+  <div class="overlay"></div>
+
+  <!-- Start / Hello -->
+  <div id="hello" class="hello" aria-live="polite">
+    <div class="hello-card">
+      <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
+      <h1>スターターアプリへようこそ！</h1>
+      <p>このアプリをホーム画面に追加してください。</p>
+      <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
+      <a class="start-link" href="#go" onclick="startAppFull();">スタート</a>
+    </div>
+  </div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="left">
+      <div class="azwrap" aria-label="AからZまでの進捗">
+        <span class="azlabel">A</span>
+        <div class="azmeter"><div class="bar"><i id="azFill"></i></div></div>
+        <span class="azlabel">Z</span>
+      </div>
+      <div id="where" class="where" aria-live="polite">A</div>
+    </div>
+
+    <div class="right">
+      <div class="lockline">
+        <span id="lockStatus"><span class="clock">24:00:00</span> 後にアンロック</span>
+      </div>
+      <div class="lockmeter"><i id="lockFill"></i></div>
+    </div>
+  </div>
+
+  <!-- Letter screen -->
+  <div class="letter-screen">
+    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
+    <div class="buttons">
+      <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
+      <button id="btn2" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
+      <button id="btn3" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
+      <button id="btn4" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
+    </div>
+    <button id="finishBtn" class="btn-finish">できた！</button>
+  </div>
+
+  <!-- Letter nav (appears after B unlocks) -->
+  <div class="nav" id="nav">
+    <button id="prev" class="nbtn">◀︎</button>
+    <button id="next" class="nbtn">▶︎</button>
+  </div>
+
+  <canvas id="confettiFinish"></canvas>
+  <canvas id="confettiQuiz"></canvas>
+
+  <!-- SFX -->
+  <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto" playsinline></audio>
+  <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto" playsinline></audio>
+
+  <!-- TEST PAGE (auto milestones only) -->
+  <div id="test">
+    <div class="t-back"></div>
+    <div class="t-card">
+      <h2 class="t-title">テスト</h2>
+      <p class="t-prompt">音声を聞いて、正しい<strong>文字</strong>をえらぼう！</p>
+      <div class="t-ctrl">
+        <button id="tPlay" class="t-btn">▶︎ 再生</button>
+        <span id="tHint" class="t-hint"></span>
+      </div>
+      <div id="tGrid" class="t-grid"></div>
+      <div class="t-bottom">
+        <div id="tProgress" class="t-progress">1 / 1</div>
+        <button id="tClose" class="t-btn t-ok" style="display:none">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <script>
+    /* ---------- PWA: register service worker ---------- */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
+      });
+    }
+
+    /* ---------- Audio (mobile-friendly) ---------- */
+    let activeAudio = null;
+    let audioCtx = null;
+    function ensureAudioCtx(){
+      try{
+        if ('AudioContext' in window || 'webkitAudioContext' in window){
+          audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+          if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+        }
+      }catch(e){}
+      return audioCtx;
+    }
+    document.addEventListener('touchstart', ensureAudioCtx, {once:true, passive:true});
+    document.addEventListener('click', ensureAudioCtx, {once:true});
+    function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; } }catch(e){} activeAudio = null; }
+    function playSound(src, gain=1){
+      stopActive();
+      try{
+        const el = new Audio(src);
+        el.preload = 'auto';
+        el.playsInline = true; el.setAttribute('playsinline','');
+        activeAudio = el;
+        const ctx = ensureAudioCtx();
+        if (ctx){
+          try{
+            const node = ctx.createMediaElementSource(el);
+            const g = ctx.createGain(); g.gain.value = gain;
+            node.connect(g).connect(ctx.destination);
+          }catch{ el.volume = Math.min(1, gain); }
+        }else{ el.volume = Math.min(1, gain); }
+        el.play().catch(()=>{});
+      }catch(e){}
+    }
+    window.addEventListener('pagehide', stopActive);
+    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
+
+    /* ---------- Constants & DOM ---------- */
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26 letters
+    const MAX_IDX = 25; // A..Z
+
+    // LocalStorage keys (persistent "memory")
+    const LS_KEY_DONE = "abc_done_letters";
+    const LS_KEY_LAST_TEST = "abc_last_test_m";
+    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";
+    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";
+
+    // DOM refs
+    const azFill = document.getElementById("azFill");
+    const where = document.getElementById("where");
+    const letterImg = document.getElementById("letterImg");
+    const btn1 = document.getElementById("btn1");
+    const btn2 = document.getElementById("btn2");
+    const btn3 = document.getElementById("btn3");
+    const btn4 = document.getElementById("btn4");
+    const finishBtn = document.getElementById("finishBtn");
+    const clickAudio = document.getElementById("clickAudio");
+    const lockStatus = document.getElementById("lockStatus");
+    const lockFill = document.getElementById("lockFill");
+    const nav = document.getElementById("nav");
+    const prev = document.getElementById("prev");
+    const next = document.getElementById("next");
+
+    const test = document.getElementById("test");
+    const tGrid = document.getElementById("tGrid");
+    const tPlay = document.getElementById("tPlay");
+    const tHint = document.getElementById("tHint");
+    const tClose = document.getElementById("tClose");
+    const tProgress = document.getElementById("tProgress");
+
+    /* ---------- App state ---------- */
+    let letterIdx = 0; // 0=A
+    let doneList = loadDoneList();
+    let doneSet = new Set(doneList);
+    let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
+    let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);
+    let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
+
+    /* ---------- Helpers ---------- */
+    function loadDoneList(){
+      try{ const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]"); return Array.isArray(raw) ? raw : []; }
+      catch{ return []; }
+    }
+    function saveDone(){ try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{} }
+    function loadNumber(key, def){ const n = Number(localStorage.getItem(key) ?? def); return Number.isFinite(n) ? n : def; }
+    function saveNumber(key, val){ try{ localStorage.setItem(key, String(val)); }catch{} }
+
+    function getCardBase(i){ return i*4; }
+    function firstCardSrc(idx){ return `./${getCardBase(idx)+1}.jpg`; }
+
+    function showCard(n){
+      const base = getCardBase(Math.min(letterIdx, MAX_IDX));
+      const num = base + n; // 1..4
+      letterImg.src = `./${num}.jpg`;
+      letterImg.alt = `レター画像`;
+    }
+
+    function updateAZMeter(){ azFill.style.width = ((letterIdx / MAX_IDX) * 100) + "%"; }
+    function updateWhere(){ where.textContent = letters[letterIdx]; }
+
+    function msToHMS(ms){
+      const s = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      // H:MM:SS
+      return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+
+    function updateCountdownUI(){
+      // lock meter fill + live clock text
+      if (unlockIdx >= MAX_IDX){
+        lockStatus.innerHTML = `<span class="lock-unlocked">✅ <strong>全ての文字がアンロック済み</strong></span>`;
+        lockFill.style.width = '100%';
+        return;
+      }
+      if (nextUnlockMs > 0){
+        const remaining = Math.max(0, nextUnlockMs - Date.now());
+        const total = 24*60*60*1000;
+        const pct = Math.min(1, 1 - (remaining / total));
+        lockFill.style.width = (pct*100).toFixed(1) + '%';
+        const hhmmss = msToHMS(remaining);
+        lockStatus.innerHTML = `<span class="clock">${hhmmss}</span> 後にアンロック`;
+      }else{
+        lockFill.style.width = '0%';
+        lockStatus.innerHTML = `<span class="clock">24:00:00</span> 後にアンロック`;
+      }
+    }
+
+    function refreshUnlocks(){
+      // advance unlock if timer reached
+      if (nextUnlockMs > 0 && Date.now() >= nextUnlockMs && unlockIdx < MAX_IDX){
+        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX);
+        nextUnlockMs = 0;
+        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
+        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+        // show arrows once B (idx 1) is unlocked
+        if (unlockIdx >= 1) nav.classList.add('show');
+      }
+      updateCountdownUI();
+    }
+
+    function updateTop(){
+      updateWhere();
+      updateAZMeter();
+      updateCountdownUI();
+      if (unlockIdx >= 1) nav.classList.add('show'); else nav.classList.remove('show');
+    }
+
+    function clampToUnlocked(i){
+      const limit = unlockIdx;              // HARD gate: cannot move beyond unlocked
+      return Math.max(0, Math.min(i, limit));
+    }
+
+    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
+    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
+
+    function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
+    function playLetterTimes(times){
+      const L = letters[letterIdx];
+      const name = L.repeat(times); // "A","AA","AAA","AAAA"
+      const src = `assets/audio/${name}.m4a`;
+      playSound(src, 1);
+    }
+    function playLetterCueByIndex(idx){
+      const L = letters[idx];
+      playSound(`assets/audio/${L}.m4a`, 1.0);
+    }
+
+    function firstUnfinishedUnlocked(){
+      const limit = unlockIdx;
+      for (let i=0;i<=limit;i++){
+        if (!doneSet.has(letters[i])) return i;
+      }
+      return clampToUnlocked(letterIdx);
+    }
+
+    function onEnterLetter(){
+      const L = letters[letterIdx];
+      // “Finish” is one-time only; only shown after ④ for not-yet-done letters
+      finishBtn.style.display = 'none';
+      setButtonColorsReset();
+      showCard(1);
+      updateTop();
+    }
+
+    /* ---------- Start ---------- */
+    function startAppFull(){
+      startApp();
+      refreshUnlocks();
+      letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
+      onEnterLetter();
+    }
+    window.startAppFull = startAppFull;
+
+    if(location.hash === '#go'){ startAppFull(); }
+
+    /* ---------- Button handlers ---------- */
+    btn1.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(1); playLetterTimes(1); markBtnDone(btn1); }, {passive:true});
+    btn2.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(2); playLetterTimes(2); markBtnDone(btn2); }, {passive:true});
+    btn3.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(3); playLetterTimes(3); markBtnDone(btn3); }, {passive:true});
+    btn4.addEventListener('click', ()=>{
+      ensureAudioCtx(); showCard(4); playLetterTimes(4); markBtnDone(btn4);
+      const L = letters[letterIdx];
+      if (!doneSet.has(L)) finishBtn.style.display='inline-block'; // only if not previously finished
+    }, {passive:true});
+
+    /* ---------- Finish & gating ---------- */
+    function startFinishConfetti(duration=5000){
+      const cFinish = document.getElementById("confettiFinish");
+      const xFinish = cFinish.getContext("2d");
+      function resize(){ cFinish.width = innerWidth; cFinish.height = innerHeight; }
+      resize(); window.addEventListener('resize', resize, {once:true});
+
+      let running = true;
+      const pieces = Array.from({length:360}).map(()=>({
+        x: Math.random()*cFinish.width, y: -Math.random()*cFinish.height,
+        r: Math.random()*8+3, vy: Math.random()*2+1.5,
+        color: `hsl(${Math.random()*360},100%,55%)`
+      }));
+      const end = Date.now() + duration;
+      (function draw(){
+        xFinish.clearRect(0,0,cFinish.width,cFinish.height);
+        for(const p of pieces){
+          xFinish.beginPath(); xFinish.arc(p.x,p.y,p.r,0,2*Math.PI);
+          xFinish.fillStyle = p.color; xFinish.fill();
+          p.y += p.vy*2.2; if(p.y>cFinish.height+12){ p.y = -10; p.x = Math.random()*cFinish.width; }
+        }
+        if(Date.now()<end && running) requestAnimationFrame(draw);
+        else { xFinish.clearRect(0,0,cFinish.width,cFinish.height); running=false; }
+      })();
+    }
+
+    finishBtn.onclick = ()=>{
+      playClick();
+      const L = letters[letterIdx];
+      if(!doneSet.has(L)){
+        doneSet.add(L);
+        doneList.push(L);
+        saveDone();
+      }
+
+      playSound('assets/sfx/magic.mp3', 1.5);
+      startFinishConfetti(5000);
+
+      finishBtn.style.display='none';
+      setButtonColorsReset();
+
+      // Start a strict 24h timer ONLY if finishing the newest unlocked letter AND not Z
+      if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
+        nextUnlockMs = Date.now() + 24*60*60*1000; // 24h
+        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+      }
+
+      // Final: Z -> show finished.jpg and stop
+      if (letterIdx === MAX_IDX){
+        letterImg.src = './finished.jpg';
+        letterImg.alt = 'FINISHED!';
+        updateTop();
+        return;
+      }
+
+      // Milestone quiz every 5 (skip after Z)
+      const groupsDone = Math.floor(doneSet.size / 5);
+      if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > loadNumber(LS_KEY_LAST_TEST, 0) && doneSet.size < 26){
+        localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
+        openTest();
+      }
+
+      showCard(1);
+      updateTop();
+    };
+
+    /* ---------- Letter nav (review only within unlocked range) ---------- */
+    prev.onclick = ()=>{
+      letterIdx = Math.max(0, letterIdx-1);
+      onEnterLetter();
+    };
+    next.onclick = ()=>{
+      letterIdx = Math.min(unlockIdx, letterIdx+1); // cannot pass the locked boundary
+      onEnterLetter();
+    };
+
+    /* ---------- Live countdown + unlock polling ---------- */
+    setInterval(refreshUnlocks, 1000);
+    window.addEventListener('focus', refreshUnlocks);
+
+    /* ---------- Quiz (auto only) ---------- */
+    function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
+    function startQuizConfetti(duration = 3000){
+      const cQuiz = document.getElementById("confettiQuiz");
+      const xQuiz = cQuiz.getContext("2d");
+      cQuiz.style.zIndex = '200';
+      function resize(){ cQuiz.width = innerWidth; cQuiz.height = innerHeight; }
+      resize(); window.addEventListener('resize', resize, {once:true});
+
+      const cx = cQuiz.width/2, cy = cQuiz.height/2;
+      let items = [];
+      const start = Date.now();
+      const palettes = [
+        ["#ff3b30","#ffcc00","#34c759","#007aff","#af52de","#ff9f0a"],
+        ["#e11d48","#7c3aed","#06b6d4","#22c55e","#f59e0b","#ef4444"],
+        ["#00e5ff","#b6ff00","#ff6d00","#ff00e5","#00ffa3","#ffd300"]
+      ];
+      function pick(){ const p = palettes[Math.floor(Math.random()*palettes.length)];
+        return [p[Math.floor(Math.random()*p.length)], p[Math.floor(Math.random()*p.length)]]; }
+      function emitBurst(size = 160){
+        for(let i=0;i<size;i++){
+          const a = Math.random()*Math.PI*2, s = Math.random()*4 + 2.8;
+          const r = Math.random();
+          const type = r<0.45?'star':(r<0.85?'ribbon':'dot');
+          const [c1,c2] = pick();
+          items.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*0.32,type,life:700+Math.random()*900,c1,c2,r:Math.random()*6+3});
+        }
+        for(let i=0;i<40;i++){
+          const a=Math.random()*Math.PI*2,s=Math.random()*5+3;
+          items.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,rot:0,vr:0,type:'spark',life:400+Math.random()*500,c1:'#ffffff',c2:'#ffffff',r:2});
+        }
+      }
+      emitBurst(200);
+      const interval = setInterval(()=>{ if(Date.now()-start<duration) emitBurst(130); else clearInterval(interval); }, 400);
+
+      (function draw(){
+        const t = Date.now() - start;
+        xQuiz.clearRect(0,0,cQuiz.width,cQuiz.height);
+        for (const it of items){
+          it.x+=it.vx; it.y+=it.vy; it.vy+=0.05; it.rot+=it.vr; it.life-=16;
+          xQuiz.save(); xQuiz.translate(it.x,it.y); xQuiz.rotate(it.rot);
+          if (it.type==='star'){ xQuiz.fillStyle=it.c1; drawStar(xQuiz,0,0,5,8,3.5); xQuiz.fill(); }
+          else if (it.type==='ribbon'){ xQuiz.fillStyle=it.c2; xQuiz.fillRect(-8,-2,16,4); }
+          else { xQuiz.fillStyle=it.c1; xQuiz.beginPath(); xQuiz.arc(0,0,it.r,0,Math.PI*2); xQuiz.fill(); }
+          xQuiz.restore();
+        }
+        items = items.filter(it => it.life>0 && it.x>-60 && it.x<cQuiz.width+60 && it.y<cQuiz.height+60);
+        if (t < duration + 300){ requestAnimationFrame(draw); } else { xQuiz.clearRect(0,0,cQuiz.width,cQuiz.height); }
+      })();
+    }
+    function drawStar(ctx, x, y, spikes, outer, inner){
+      let rot = Math.PI/2*3, step = Math.PI/spikes, cx=x, cy=y;
+      ctx.beginPath(); ctx.moveTo(cx, cy-outer);
+      for(let i=0;i<spikes;i++){
+        cx = x + Math.cos(rot)*outer; cy = y + Math.sin(rot)*outer; ctx.lineTo(cx,cy); rot += step;
+        cx = x + Math.cos(rot)*inner; cy = y + Math.sin(rot)*inner; ctx.lineTo(cx,cy); rot += step;
+      }
+      ctx.lineTo(x,y-outer); ctx.closePath();
+    }
+
+    function openTest(){
+      const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
+      let pool = recent.length >= 4 ? recent : Array.from({length:(unlockIdx+1)}, (_,i)=>i);
+      pool = shuffle(pool).slice(0,4);
+
+      const correctIdx = pool[Math.floor(Math.random()*pool.length)];
+      const renderOrder = shuffle([...pool]);
+
+      tGrid.innerHTML = '';
+      for(const idx of renderOrder){
+        const btn = document.createElement('button');
+        btn.type='button'; btn.className='t-item';
+        const img = document.createElement('img');
+        img.src = firstCardSrc(idx);
+        img.alt = 'えらぶレター';
+        btn.appendChild(img);
+        btn.onclick = ()=>{
+          const ok = idx === correctIdx;
+          btn.classList.add(ok?'correct':'wrong');
+          if(ok){
+            playSound('assets/sfx/cheer.mp3', 1.0);
+            [...tGrid.querySelectorAll('.t-item')].forEach(b=>b.disabled=true);
+            startQuizConfetti(3000);
+            tClose.style.display = 'inline-block';
+          }else{
+            setTimeout(()=> btn.classList.remove('wrong'), 380);
+          }
+        };
+        tGrid.appendChild(btn);
+      }
+
+      tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
+      if(tHint){ tHint.textContent = ''; }
+      tClose.style.display = 'none';
+      tProgress.textContent = '1 / 1';
+      test.classList.add('active');
+      playLetterCueByIndex(correctIdx);
+
+      const backdropClose = (e)=>{ if(e.target.classList.contains('t-back')) closeTest(); };
+      test.addEventListener('click', backdropClose, {once:true});
+      tClose.onclick = closeTest;
+    }
+    function closeTest(){ test.classList.remove('active'); stopActive(); }
+  </script>
+</body>
+</html>
