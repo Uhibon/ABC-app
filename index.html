@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>ブーハー ABC スターター</title>
+  <title>ブーハABC – スターター</title>
 
   <!-- App icon for desktop / home screen -->
   <link rel="icon" type="image/png" sizes="192x192" href="playful-pink-booha.png">
@@ -31,6 +31,7 @@
       --purple:#7c5cff;          /* 24h meter fill */
       --purple-soft:#ece9ff;
       --ok:#22c55e; --bad:#ef4444;
+      --card-shadow: none;       /* ensure no white box/shadow behind images */
     }
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:#f6f7fb}
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
@@ -51,44 +52,50 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar */
+    /* Top bar: left (A–Z meter), center (logo), right (24h meter) */
     .topbar{
-      display:flex;align-items:flex-start;gap:14px;justify-content:flex-start;
-      padding:10px 16px;max-width:1200px;margin:0 auto;
+      display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+      gap:16px;padding:10px 16px;max-width:1200px;margin:0 auto;
     }
-    .stack{display:flex;flex-direction:column;gap:8px;min-width:260px}
 
-    /* A–Z progress (pink) */
-    .progress{width:min(52vw,360px)}
+    /* A–Z progress (pink) on the left with A/Z labels only */
+    .progress{
+      width:100%;
+    }
+    .progress .labels{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:800;color:var(--ink);
+    }
     .bar{height:12px;background:var(--pink-soft);border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.06)}
     .bar>i{display:block;height:100%;background:var(--pink);width:0%}
-    .where{font-weight:800;min-width:3ch}
 
-    /* 24h lock meter (purple) */
-    .lockbox{display:flex;flex-direction:column;gap:6px;min-width:min(58vw,380px)}
-    .lockline{font-size:12px;color:#333;font-weight:800}
+    /* Center logo */
+    .mid-logo{
+      display:grid;place-items:center;
+    }
+    .mid-logo img{width:64px;height:64px;object-fit:contain}
+
+    /* 24h lock meter (purple) on the right – fill only, no ghost */
+    .lockbox{display:flex;flex-direction:column;gap:6px;justify-self:end;min-width:220px;width:100%}
+    .lockline{font-size:12px;color:#333;font-weight:800;text-align:right}
     .lockmeter{position:relative;height:16px;border-radius:999px;background:var(--purple-soft);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06); overflow:hidden}
     .lockmeter i{position:absolute;left:0;top:0;height:100%;width:0%;background:var(--purple);transition:width .6s}
-    .lock-ghost{
-      position:absolute;top:-10px;transform:translateX(-50%);
-      width:26px;height:26px;background:url('./playful-pink-booha.png') center/contain no-repeat;transition:left .6s
-    }
-    .lock-unlocked{color:#16a34a;font-weight:800}
 
     /* Letter screen (no scroll, centered) */
     .letter-screen{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:calc(100vh - 108px); /* reserve top bar */
-      padding:8px 16px 16px;gap:14px;text-align:center;max-width:1200px;margin:0 auto;
+      height:calc(100vh - 120px); /* reserve top bar height */
+      padding:8px 16px 16px;gap:16px;text-align:center;max-width:1200px;margin:0 auto;
     }
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);height:min(60vh,66svh)}
-    .card-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:none}
+    .card-wrap img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;box-shadow:var(--card-shadow);background:transparent}
 
+    /* Buttons: never touch/overlap */
     .buttons{
-      display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)
+      display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));
+      gap:14px;width:min(720px,92vw)
     }
     .btn-audio{
-      display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:20px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;
       box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s, opacity .12s
     }
     .btn-audio .num{font-size:26px}
@@ -96,7 +103,7 @@
     .btn-audio:active{transform:scale(.96)}
     .btn-audio[disabled]{opacity:.45;cursor:not-allowed;transform:none}
 
-    /* Color change after click */
+    /* Clicked color state + ✓ */
     .btn1.done{background:#ff7a7a}
     .btn2.done{background:#16c1de}
     .btn3.done{background:#ffe08c;color:#111}
@@ -110,7 +117,7 @@
     canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
     canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
 
-    /* === QUIZ MODAL (auto only; no visible trigger) === */
+    /* QUIZ MODAL (auto only; no visible trigger) */
     #test{position:fixed;inset:0;z-index:80;display:none}
     #test.active{display:block}
     .t-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -124,7 +131,7 @@
     .t-item.correct{border-color:#22c55e}
     .t-item.wrong{border-color:#ef4444}
     .t-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
-    .t-btn{display:none} /* no manual play/close buttons shown */
+    .t-btn{display:none} /* keep hidden (auto) */
     .t-progress{font-weight:800}
     .t-hint{display:none}
     @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
@@ -148,23 +155,24 @@
     </div>
   </div>
 
-  <!-- Top bar (left corner stack) -->
+  <!-- Top bar: A–Z (left), logo (center), 24h (right) -->
   <div class="topbar">
-    <div class="stack">
-      <div class="progress">
-        <div class="bar"><i id="barFill"></i></div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
-          <div id="where" class="where" aria-live="polite">A</div>
-          <small style="color:var(--muted)">A → Z</small>
-        </div>
-      </div>
+    <!-- Left: A–Z meter with only A / Z labels -->
+    <div class="progress">
+      <div class="labels"><span>A</span><span>Z</span></div>
+      <div class="bar"><i id="barFill"></i></div>
+    </div>
 
-      <div class="lockbox">
-        <div id="lockStatus" class="lockline">次の文字は 24時間 後にアンロック</div>
-        <div class="lockmeter">
-          <i id="lockFill"></i>
-          <span id="lockGhost" class="lock-ghost" style="left:0%"></span>
-        </div>
+    <!-- Center: Booha logo -->
+    <div class="mid-logo">
+      <img src="playful-pink-booha.png" alt="Booha" />
+    </div>
+
+    <!-- Right: 24h meter (fill only) -->
+    <div class="lockbox">
+      <div id="lockStatus" class="lockline">次の文字は 24時間 後にアンロック</div>
+      <div class="lockmeter">
+        <i id="lockFill"></i>
       </div>
     </div>
   </div>
@@ -252,7 +260,6 @@
 
     // DOM
     const barFill = document.getElementById("barFill");
-    const where = document.getElementById("where");
     const letterImg = document.getElementById("letterImg");
     const btn1 = document.getElementById("btn1");
     const btn2 = document.getElementById("btn2");
@@ -262,7 +269,6 @@
     const clickAudio = document.getElementById("clickAudio");
     const lockStatus = document.getElementById("lockStatus");
     const lockFill = document.getElementById("lockFill");
-    const lockGhost = document.getElementById("lockGhost");
 
     // Quiz DOM
     const test = document.getElementById("test");
@@ -304,7 +310,6 @@
     function updateTop(){
       const progress = (doneSet.size / TOTAL_LETTERS) * 100;
       barFill.style.width = progress + "%";
-      where.textContent = `${letters[Math.min(letterIdx, MAX_IDX)]}`;
       updateLockUI();
     }
 
@@ -321,9 +326,8 @@
 
     function updateLockUI(){
       if (unlockIdx >= MAX_IDX){
-        lockStatus.innerHTML = `<span class="lock-unlocked">✅ 全ての文字がアンロック済み</span>`;
+        lockStatus.innerHTML = `<span style="color:#16a34a;font-weight:800">✅ 全ての文字がアンロック済み</span>`;
         lockFill.style.width = '100%';
-        lockGhost.style.left = '100%';
         return;
       }
       if (nextUnlockMs > 0){
@@ -331,13 +335,11 @@
         const total = 24*60*60*1000;
         const pct = Math.min(1, 1 - (remaining / total)); // fill as time passes
         lockFill.style.width = (pct*100).toFixed(1) + '%';
-        lockGhost.style.left = (pct*100).toFixed(1) + '%';
         lockStatus.textContent = remaining>0
           ? `次の文字は ${msToHMS(remaining)} 後にアンロック`
           : `🆕 新しい文字がアンロックされました`;
       }else{
         lockFill.style.width = '0%';
-        lockGhost.style.left = '0%';
         lockStatus.textContent = `次の文字は 24時間 後にアンロック`;
       }
     }
@@ -625,33 +627,6 @@
     }
 
     function closeTest(){ test.classList.remove('active'); stopActive(); }
-
-    /* ---------- Letter navigation constraints ---------- */
-    function jumpTo(i){
-      const clamped = clampToUnlocked(i);
-      if (clamped !== letterIdx){
-        letterIdx = clamped;
-        resetSteps();
-        showCard(1);
-        updateTop();
-      }
-    }
-
-    // Simple swipe (mobile) for review navigation within unlocked range
-    (function swipeNav(){
-      let sx=null, sy=null;
-      window.addEventListener('touchstart',e=>{ if(e.touches.length===1){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; }});
-      window.addEventListener('touchend',e=>{
-        if(sx==null) return;
-        const dx = (e.changedTouches[0].clientX - sx);
-        const dy = (e.changedTouches[0].clientY - sy);
-        sx=sy=null;
-        if(Math.abs(dx)>40 && Math.abs(dy)<60){
-          if(dx<0) jumpTo(Math.min(unlockIdx, letterIdx+1));
-          else     jumpTo(Math.max(0, letterIdx-1));
-        }
-      },{passive:true});
-    })();
 
   </script>
 </body>
