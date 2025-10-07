@@ -45,18 +45,19 @@
     }
     .start-link:active{transform:scale(.98)}
 
-    /* Top bar: A–Z left, countdown right */
+    /* Top bar: A–Z meter (left), countdown (right) */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
     .left{display:flex;align-items:center;gap:12px}
-    .where{font-weight:800;min-width:3ch}
     .azwrap{display:flex;align-items:center;gap:8px}
-    .azlabel{font-size:12px;font-weight:800;color:#333;min-width:1.2em;text-align:center}
+    .azlabel{font-size:12px;font-weight:800;color:#333;min-width:2.6em;text-align:center}
     .azmeter{width:180px}
     .bar{height:10px;background:#ffd1e6;border-radius:999px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)}
-    .bar>i{display:block;height:100%;background:#ff4da6;width:0%} /* A–Z position */
+    .bar>i{display:block;height:100%;background:#ff4da6;width:0%} /* Unlocked boundary */
+
+    .where{font-weight:800;min-width:1.5em;text-align:center}
 
     .right{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:320px}
-    .lockline{font-size:12px;color:#111;display:flex;align-items:center;gap:6px;font-weight:900} /* bold live timer */
+    .lockline{font-size:12px;color:#111;display:flex;align-items:center;gap:6px;font-weight:900}
     .clock{font-variant-numeric:tabular-nums}
     .lockmeter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#f1f5f9,#e2e8f0);box-shadow:inset 0 1px 2px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);overflow:hidden}
     .lockmeter i{position:absolute;left:0;top:0;height:100%;width:0%;background:#7c3aed;transition:width .6s}
@@ -132,9 +133,8 @@
   <div class="topbar">
     <div class="left">
       <div class="azwrap" aria-label="AからZまでの進捗">
-        <span class="azlabel">A</span>
+        <span class="azlabel">A–Z</span>
         <div class="azmeter"><div class="bar"><i id="azFill"></i></div></div>
-        <span class="azlabel">Z</span>
       </div>
       <div id="where" class="where" aria-live="polite">A</div>
     </div>
@@ -264,7 +264,7 @@
     const test = document.getElementById("test");
     const tGrid = document.getElementById("tGrid");
     const tPlay = document.getElementById("tPlay");
-    const tHint = document.getElementById("tHint");
+    theHint = document.getElementById("tHint"); // (kept for compatibility)
     const tClose = document.getElementById("tClose");
     const tProgress = document.getElementById("tProgress");
 
@@ -295,7 +295,11 @@
       letterImg.alt = `レター画像`;
     }
 
-    function updateAZMeter(){ azFill.style.width = ((letterIdx / MAX_IDX) * 100) + "%"; }
+    // A–Z meter now shows UNLOCKED boundary (not current cursor)
+    function updateAZMeter(){
+      const pct = (unlockIdx / MAX_IDX) * 100;
+      azFill.style.width = pct + "%";
+    }
     function updateWhere(){ where.textContent = letters[letterIdx]; }
 
     function msToHMS(ms){
@@ -303,12 +307,10 @@
       const h = Math.floor(s / 3600);
       const m = Math.floor((s % 3600) / 60);
       const sec = s % 60;
-      // H:MM:SS
       return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     }
 
     function updateCountdownUI(){
-      // lock meter fill + live clock text
       if (unlockIdx >= MAX_IDX){
         lockStatus.innerHTML = `<span class="lock-unlocked">✅ <strong>全ての文字がアンロック済み</strong></span>`;
         lockFill.style.width = '100%';
@@ -334,10 +336,9 @@
         nextUnlockMs = 0;
         saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-        // show arrows once B (idx 1) is unlocked
-        if (unlockIdx >= 1) nav.classList.add('show');
+        if (unlockIdx >= 1) nav.classList.add('show'); // arrows appear after B unlocks
       }
-      updateCountdownUI();
+      updateTop();
     }
 
     function updateTop(){
@@ -345,10 +346,14 @@
       updateAZMeter();
       updateCountdownUI();
       if (unlockIdx >= 1) nav.classList.add('show'); else nav.classList.remove('show');
+      // Show Finish button immediately for the NEW letter (only the latest unlocked, if not done)
+      const L = letters[letterIdx];
+      const isNewest = (letterIdx === unlockIdx);
+      finishBtn.style.display = (!doneSet.has(L) && isNewest) ? 'inline-block' : 'none';
     }
 
     function clampToUnlocked(i){
-      const limit = unlockIdx;              // HARD gate: cannot move beyond unlocked
+      const limit = unlockIdx; // HARD gate
       return Math.max(0, Math.min(i, limit));
     }
 
@@ -377,17 +382,16 @@
 
     function onEnterLetter(){
       const L = letters[letterIdx];
-      // “Finish” is one-time only; only shown after ④ for not-yet-done letters
-      finishBtn.style.display = 'none';
       setButtonColorsReset();
       showCard(1);
-      updateTop();
+      updateTop(); // handles Finish button visibility for the newest letter
     }
 
     /* ---------- Start ---------- */
     function startAppFull(){
       startApp();
       refreshUnlocks();
+      // Start at the first unfinished among unlocked (A on first install)
       letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
       onEnterLetter();
     }
@@ -401,8 +405,7 @@
     btn3.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(3); playLetterTimes(3); markBtnDone(btn3); }, {passive:true});
     btn4.addEventListener('click', ()=>{
       ensureAudioCtx(); showCard(4); playLetterTimes(4); markBtnDone(btn4);
-      const L = letters[letterIdx];
-      if (!doneSet.has(L)) finishBtn.style.display='inline-block'; // only if not previously finished
+      updateTop(); // keep Finish button logic consistent
     }, {passive:true});
 
     /* ---------- Finish & gating ---------- */
@@ -441,12 +444,12 @@
       }
 
       playSound('assets/sfx/magic.mp3', 1.5);
-      startFinishConfetti(5000);
+      startFinishConfetti(3000); // shorter, punchier
 
       finishBtn.style.display='none';
       setButtonColorsReset();
 
-      // Start a strict 24h timer ONLY if finishing the newest unlocked letter AND not Z
+      // Start strict 24h timer ONLY if finishing the newest unlocked letter AND not Z
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
         nextUnlockMs = Date.now() + 24*60*60*1000; // 24h
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
@@ -460,7 +463,7 @@
         return;
       }
 
-      // Milestone quiz every 5 (skip after Z)
+      // Milestone quiz every 5 (E, J, O, T, Y)
       const groupsDone = Math.floor(doneSet.size / 5);
       if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > loadNumber(LS_KEY_LAST_TEST, 0) && doneSet.size < 26){
         localStorage.setItem(LS_KEY_LAST_TEST, String(groupsDone));
@@ -504,7 +507,7 @@
       ];
       function pick(){ const p = palettes[Math.floor(Math.random()*palettes.length)];
         return [p[Math.floor(Math.random()*p.length)], p[Math.floor(Math.random()*p.length)]]; }
-      function emitBurst(size = 160){
+      function emitBurst(size = 140){
         for(let i=0;i<size;i++){
           const a = Math.random()*Math.PI*2, s = Math.random()*4 + 2.8;
           const r = Math.random();
@@ -512,13 +515,9 @@
           const [c1,c2] = pick();
           items.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,rot:Math.random()*Math.PI,vr:(Math.random()-.5)*0.32,type,life:700+Math.random()*900,c1,c2,r:Math.random()*6+3});
         }
-        for(let i=0;i<40;i++){
-          const a=Math.random()*Math.PI*2,s=Math.random()*5+3;
-          items.push({x:cx,y:cy,vx:Math.cos(a)*s,vy:Math.sin(a)*s,rot:0,vr:0,type:'spark',life:400+Math.random()*500,c1:'#ffffff',c2:'#ffffff',r:2});
-        }
       }
       emitBurst(200);
-      const interval = setInterval(()=>{ if(Date.now()-start<duration) emitBurst(130); else clearInterval(interval); }, 400);
+      const interval = setInterval(()=>{ if(Date.now()-start<duration) emitBurst(110); else clearInterval(interval); }, 420);
 
       (function draw(){
         const t = Date.now() - start;
@@ -577,7 +576,7 @@
       }
 
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-      if(tHint){ tHint.textContent = ''; }
+      if(theHint){ theHint.textContent = ''; }
       tClose.style.display = 'none';
       tProgress.textContent = '1 / 1';
       test.classList.add('active');
