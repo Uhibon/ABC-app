@@ -23,6 +23,10 @@
 
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     body{ -webkit-tap-highlight-color: transparent; touch-action: manipulation; background:#fff; }
+    *{ -webkit-touch-callout:none }
+    img{ user-select:none; -webkit-user-drag:none; -webkit-touch-callout:none }
+    button{ touch-action: manipulation; }
+
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
     #go:target ~ #hello{display:none}
@@ -41,10 +45,11 @@
 
     /* Top bar */
     .topbar{
+      position:sticky; top:0;
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
       padding:10px 16px;
-      /* Mobile fix: keep below visible viewport top inset (URL bar / notch) */
-      padding-top: calc(var(--safe-top, 0px) + 10px);
+      padding-top: calc(env(safe-area-inset-top, 0px) + var(--safe-top, 0px) + 6px);
+      z-index:5;
     }
     .chip{
       background:#ffffffcc; backdrop-filter:saturate(1.2) blur(2px);
@@ -62,7 +67,7 @@
     /* Letter screen */
     .letter-screen{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:calc(var(--vh) - 96px); /* Mobile 100vh fix via JS-set --vh */
+      min-height:calc(var(--vh) - 96px);
       padding:16px;gap:16px;text-align:center
     }
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
@@ -144,7 +149,7 @@
       <button id="prev" type="button">← もどる</button>
       <button id="next" type="button">すすむ →</button>
     </div>
-    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
+    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" draggable="false" /></div>
     <div id="btnRow" class="buttons">
       <button id="btn1" type="button" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" type="button" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
@@ -157,8 +162,8 @@
   <canvas id="confetti"></canvas>
 
   <!-- SFX -->
-  <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
-  <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
+  <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto" playsinline></audio>
+  <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto" playsinline></audio>
 
   <!-- QUIZ -->
   <div id="quiz" aria-hidden="true">
@@ -176,9 +181,9 @@
   </div>
 
   <script>
-    /* ---------- Viewport + Safe Top Fix ---------- */
+    /* ---------- Viewport + Safe Top Fix (mobile 100vh) ---------- */
     function setVH(){ document.documentElement.style.setProperty('--vh', window.innerHeight + 'px'); }
-    setVH(); window.addEventListener('resize', setVH); window.addEventListener('orientationchange', setVH);
+    setVH(); addEventListener('resize', setVH); addEventListener('orientationchange', setVH);
 
     (function safeTopInit(){
       function setSafeTop(px){ document.documentElement.style.setProperty('--safe-top', px + 'px'); }
@@ -188,13 +193,13 @@
           const update = ()=> setSafeTop(Math.max(0, vv.offsetTop || 0));
           vv.addEventListener('resize', update);
           vv.addEventListener('scroll', update);
-          update(); // initial
+          update();
         } else { setSafeTop(0); }
       }catch{ setSafeTop(0); }
     })();
 
-    /* ---------- Versioned reset (start at A; bump to clear stale caches) ---------- */
-    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v4";
+    /* ---------- Versioned reset ---------- */
+    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v5";
     const LS_KEY_APP_VERSION = "abc_app_version";
     (function(){
       try{
@@ -206,17 +211,26 @@
       }catch{}
     })();
 
-    /* ---------- Ensure start works on tap ---------- */
+    /* ---------- Start link: robust for mobile ---------- */
     const startLink = document.getElementById('startLink');
-    startLink.addEventListener('click', ()=>startAppFull());
-    startLink.addEventListener('touchstart', ()=>startAppFull(), {passive:true});
+    const startAppFullOnce = ()=> { startAppFull(); };
+    startLink.addEventListener('click', startAppFullOnce);
+    startLink.addEventListener('pointerup', startAppFullOnce, {passive:true});
+    startLink.addEventListener('touchend', startAppFullOnce, {passive:true});
 
     /* ---------- Audio (no overlap) ---------- */
     let activeAudio = null;
     function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; } }catch(e){} activeAudio=null; }
-    function playSound(src){ stopActive(); try{ activeAudio = new Audio(src); activeAudio.play().catch(()=>{});}catch(e){} }
-    window.addEventListener('pagehide', stopActive);
-    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
+    function playSound(src){
+      stopActive();
+      try{
+        activeAudio = new Audio(src);
+        activeAudio.playsInline = true;
+        activeAudio.play().catch(()=>{ /* user gesture required – buttons provide it */ });
+      }catch(e){}
+    }
+    addEventListener('pagehide', stopActive);
+    addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
     /* ---------- Constants & DOM ---------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26
@@ -292,11 +306,11 @@
     }
 
     function updateProgressMeter(){
-      const pct = (doneSet.size / TOTAL_LETTERS) * 100; // progress only
+      const pct = (doneSet.size / TOTAL_LETTERS) * 100;
       azFill.style.width = pct + "%";
     }
 
-    function now(){ return Date.now(); }
+    const now = ()=> Date.now();
     function msToHMS(ms){
       if (ms <= 0) return "00:00:00";
       const s = Math.floor(ms/1000);
@@ -332,9 +346,9 @@
       updateNavVisibility();
     }
     setInterval(refreshUnlocks, 1000);
-    window.addEventListener('focus', refreshUnlocks);
+    addEventListener('focus', refreshUnlocks);
 
-    function clampToUnlocked(i){ return Math.max(0, Math.min(i, unlockIdx)); }
+    const clampToUnlocked = (i)=> Math.max(0, Math.min(i, unlockIdx));
 
     function resetButtons(){ btns.forEach(b=> b.classList.remove('done','locked')); }
     function lockButtonsByStep(){
@@ -343,7 +357,6 @@
         b.classList.toggle('locked', step>currentStep);
         b.classList.toggle('done', step<currentStep);
       });
-      // Single-use: show only if letter not already finished
       const show = (currentStep>4) && !doneSet.has(letters[letterIdx]);
       finishBtn.style.display = show ? 'inline-block' : 'none';
     }
@@ -369,7 +382,8 @@
       next.disabled = (getNextFinished(letterIdx) === null);
     }
 
-    prev.onclick = ()=>{
+    /* Nav: pointer-friendly */
+    const onPrev = ()=> {
       const p = getPrevFinished(letterIdx);
       if(p === null) return;
       letterIdx = p;
@@ -378,7 +392,7 @@
       showCard(1);
       updateNavVisibility();
     };
-    next.onclick = ()=>{
+    const onNext = ()=> {
       const n = getNextFinished(letterIdx);
       if(n === null) return;
       letterIdx = n;
@@ -387,6 +401,10 @@
       showCard(1);
       updateNavVisibility();
     };
+    prev.addEventListener('pointerup', onPrev);
+    prev.addEventListener('click', onPrev);
+    next.addEventListener('pointerup', onNext);
+    next.addEventListener('click', onNext);
 
     /* ---------- Letter audio ---------- */
     function playLetterTimes(times){
@@ -418,11 +436,6 @@
     if(location.hash === '#go'){ startAppFull(); }
 
     /* ---------- Step handlers (order enforced) ---------- */
-    btn1.onclick = ()=> handleStep(1);
-    btn2.onclick = ()=> handleStep(2);
-    btn3.onclick = ()=> handleStep(3);
-    btn4.onclick = ()=> handleStep(4);
-
     function handleStep(step){
       if(doneSet.size === TOTAL_LETTERS) return;
       if(step !== currentStep) return; // enforce ①→②→③→④
@@ -431,6 +444,12 @@
       currentStep++;
       lockButtonsByStep();
     }
+    const bindStep = (el, n)=>{
+      const h = ()=>handleStep(n);
+      el.addEventListener('pointerup', h);
+      el.addEventListener('click', h);
+    };
+    bindStep(btn1,1); bindStep(btn2,2); bindStep(btn3,3); bindStep(btn4,4);
 
     /* ---------- Finish current letter (single-use per set) ---------- */
     function maybeOpenQuizAfterFinish(){
@@ -442,18 +461,17 @@
       }
     }
 
-    finishBtn.onclick = ()=>{
+    const onFinish = ()=>{
       const L = letters[letterIdx];
-      if(doneSet.has(L)) return; // single-use
+      if(doneSet.has(L)) return;
 
       try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{}
       doneSet.add(L); doneList.push(L); saveDone();
 
       try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
-      startFireworks(4000); /* longer confetti on finish */
+      startFireworks(4000);
       finishBtn.style.display = 'none';
 
-      // Schedule next unlock after finishing current highest unlocked
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
         nextUnlockMs = Date.now() + H24;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
@@ -470,12 +488,14 @@
         showCard(1);
       }
     };
+    finishBtn.addEventListener('pointerup', onFinish);
+    finishBtn.addEventListener('click', onFinish);
 
-    /* ---------- Confetti (longer) ---------- */
+    /* ---------- Confetti ---------- */
     const canvas = document.getElementById('confetti');
     const ctx = canvas.getContext("2d");
     function startFireworks(duration){
-      let confettiRunning=true; resize();
+      let confettiRunning=true; resizeCanvas();
       const pieces = Array.from({length:320}).map(()=>({
         x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
         r: Math.random()*8+3, d: Math.random()*1+0.5, c: `hsl(${Math.random()*360},100%,50%)`
@@ -491,11 +511,11 @@
         else { ctx.clearRect(0,0,canvas.width,canvas.height); confettiRunning=false; }
       })();
     }
-    window.onresize = resize;
-    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-    resize();
+    function resizeCanvas(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+    addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    /* ---------- QUIZ (confetti longer too) ---------- */
+    /* ---------- QUIZ ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
     function playLetterCueByIndex(idx){
       const L = letters[idx];
@@ -517,18 +537,19 @@
         img.src = firstCardSrc(idx);
         img.alt = 'えらぶレター';
         btn.appendChild(img);
-        btn.onclick = ()=>{
+        btn.addEventListener('pointerup', ()=>{
           const ok = idx === correctIdx;
           btn.classList.add(ok?'correct':'wrong');
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
             [...qGrid.querySelectorAll('.q-item')].forEach(b=>b.disabled=true);
-            startFireworks(4000); /* longer confetti on quiz win */
+            startFireworks(4000);
             qClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
           }
-        };
+        });
+        btn.addEventListener('click', e=>e.currentTarget.dispatchEvent(new Event('pointerup')));
         qGrid.appendChild(btn);
       }
 
