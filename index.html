@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Booha Starter ABC – ブーハー ABC スターター</title>
 
-  <!-- PWA manifest + install name/icon -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#ff4da6">
   <link rel="icon" type="image/png" sizes="192x192" href="playful-pink-booha.png">
@@ -20,20 +19,14 @@
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
-    #go:target ~ #hello{display:none}
 
-    /* Hello / Start */
+    /* Hello */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
-    .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
-    .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
-    .hello-card h1{margin:12px 0 6px;font-size:24px;line-height:1.2}
-    .hello-card p{margin:8px 0;font-size:14px;color:#444}
+    .hello-card{background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .start-link{display:inline-block;margin-top:16px;padding:12px 20px;font-size:18px;font-weight:900;text-decoration:none;background:#ff4da6;color:#fff;border-radius:14px;box-shadow:0 10px 18px rgba(255,77,166,.28);cursor:pointer}
-    .start-link:active{transform:scale(.98)}
 
     /* Top bar */
     .topbar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 16px}
-    .left{display:flex;align-items:center;gap:12px}
     .azwrap{display:flex;align-items:center;gap:8px}
     .azlabel{font-size:12px;font-weight:800;color:#333;min-width:1.2em;text-align:center}
     .azmeter{width:200px}
@@ -50,46 +43,38 @@
     /* Letter screen */
     .letter-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 108px);padding:16px;gap:16px;text-align:center}
     .card-wrap{position:relative;display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
-    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
-    .placeholder{position:absolute;inset:auto 12px 12px 12px;background:rgba(255,255,255,.9);border-radius:12px;padding:8px 10px;font-size:12px;color:#333}
+    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px}
+    .placeholder{position:absolute;inset:auto 12px 12px 12px;background:rgba(255,255,255,.9);border-radius:12px;padding:8px 10px;font-size:12px;color:#333;display:none}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
     .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s, opacity .12s}
-    .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    .btn1.done{background:#ff7a7a}
-    .btn2.done{background:#16c1de}
-    .btn3.done{background:#ffe08c;color:#111}
-    .btn4.done{background:#9a86ff}
     .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
-    .btn-audio[disabled]{opacity:.45;cursor:not-allowed;transform:none;pointer-events:none}
+    .btn-audio[disabled]{opacity:.45;cursor:not-allowed;pointer-events:none}
 
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
 
-    /* Letter nav */
+    /* Nav */
     .nav{position:fixed;left:0;right:0;bottom:10px;display:flex;gap:10px;justify-content:center;z-index:40;visibility:hidden;opacity:0;transition:opacity .2s}
     .nav.show{visibility:visible;opacity:1}
     .nbtn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
     .nbtn:disabled{opacity:.45;cursor:not-allowed}
-    .nbtn:active{transform:scale(.98)}
 
     canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
-    canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
   </style>
 </head>
 <body>
-  <div id="go"></div>
   <div class="bg"></div>
   <div class="overlay"></div>
 
   <!-- Start / Hello -->
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
-      <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
+      <img src="./playful-pink-booha.png" alt="Boohaロゴ" width="140" height="140" />
       <h1>スターターアプリへようこそ！</h1>
-      <p>このアプリをホーム画面に追加してください。</p>
+      <p>ホーム画面に追加して使ってね。</p>
       <p>次の文字は <strong>24時間後</strong> にアンロックされます！</p>
       <a class="start-link" href="#go" id="startBtn">スタート</a>
     </div>
@@ -97,12 +82,10 @@
 
   <!-- Top bar -->
   <div class="topbar">
-    <div class="left">
-      <div class="azwrap" aria-label="AからZまでの進捗">
-        <span class="azlabel">A</span>
-        <div class="azmeter"><div class="bar"><i id="azFill"></i></div></div>
-        <span class="azlabel">Z</span>
-      </div>
+    <div class="azwrap" aria-label="AからZまでの進捗">
+      <span class="azlabel">A</span>
+      <div class="azmeter"><div class="bar"><i id="azFill"></i></div></div>
+      <span class="azlabel">Z</span>
     </div>
     <div class="right">
       <div class="lockline">
@@ -116,7 +99,7 @@
   <div class="letter-screen">
     <div class="card-wrap">
       <img id="letterImg" src="./1.jpg" alt="レター画像" />
-      <div id="placeholder" class="placeholder" style="display:none"></div>
+      <div id="placeholder" class="placeholder"></div>
     </div>
     <div class="buttons">
       <button id="btn1" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
@@ -127,33 +110,27 @@
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
-  <!-- Letter nav (appears after B unlocks) -->
+  <!-- Letter nav -->
   <div class="nav" id="nav">
     <button id="prev" class="nbtn">◀︎</button>
     <button id="next" class="nbtn">▶︎</button>
   </div>
 
   <canvas id="confettiFinish"></canvas>
-  <canvas id="confettiQuiz"></canvas>
 
   <!-- SFX -->
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto" playsinline></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto" playsinline></audio>
 
   <script>
-    /* ---------- Utilities ---------- */
+    /* ------------------- Shortcuts & SW ------------------- */
     const $ = (id)=>document.getElementById(id);
-
-    /* ---------- PWA SW ---------- */
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(()=>{});
-      });
+      addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
     }
 
-    /* ---------- Audio (with fallback) ---------- */
-    let activeAudio = null;
-    let audioCtx = null;
+    /* ------------------- Audio (w/ TTS fallback) ------------------- */
+    let activeAudio=null, audioCtx=null;
     function ensureAudioCtx(){
       try{
         if ('AudioContext' in window || 'webkitAudioContext' in window){
@@ -161,298 +138,239 @@
           if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
         }
       }catch(e){}
-      return audioCtx;
     }
-    function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime = 0; } }catch(e){} activeAudio = null; }
-    function speakFallback(text){
-      try{
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'en-US'; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
-      }catch(e){}
-    }
+    function stopActive(){ try{ if(activeAudio){ activeAudio.pause(); activeAudio.currentTime=0; } }catch(e){} activeAudio=null; }
+    function speakFallback(text){ try{ const u=new SpeechSynthesisUtterance(text); u.lang='en-US'; speechSynthesis.cancel(); speechSynthesis.speak(u);}catch{} }
     function playSound(src, gain=1){
       stopActive();
-      try{
-        const el = new Audio(src);
-        el.preload = 'auto';
-        el.playsInline = true; el.setAttribute('playsinline','');
-        el.addEventListener('error', ()=>{ // audio missing -> TTS fallback
-          const letters = src.split('/').pop().replace('.m4a','');
-          speakFallback(letters.split('').join(' '));
-        }, {once:true});
-        activeAudio = el;
-        const ctx = ensureAudioCtx();
-        if (ctx){
-          try{
-            const node = ctx.createMediaElementSource(el);
-            const g = ctx.createGain(); g.gain.value = gain;
-            node.connect(g).connect(ctx.destination);
-          }catch{ el.volume = Math.min(1, gain); }
-        }else{ el.volume = Math.min(1, gain); }
-        el.play().catch(()=>{});
-      }catch(e){}
+      const el = new Audio(src);
+      el.preload='auto'; el.playsInline=true; el.setAttribute('playsinline','');
+      el.addEventListener('error', ()=>{ const name=src.split('/').pop().replace('.m4a',''); speakFallback(name.split('').join(' ')); }, {once:true});
+      activeAudio=el; el.volume=Math.min(1,gain);
+      el.play().catch(()=>{});
     }
-    window.addEventListener('pagehide', stopActive);
-    window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
-    /* ---------- Constants & DOM ---------- */
+    /* ------------------- Constants & DOM ------------------- */
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
     const MAX_IDX = 25;
 
+    // DOM refs
+    const hello = $("hello"), startBtn = $("startBtn");
     const azFill = $("azFill");
-    const letterImg = $("letterImg");
-    const placeholder = $("placeholder");
+    const letterImg = $("letterImg"), placeholder = $("placeholder");
+    const btn1=$("btn1"), btn2=$("btn2"), btn3=$("btn3"), btn4=$("btn4");
+    const finishBtn=$("finishBtn");
+    const lockStatus=$("lockStatus"), lockFill=$("lockFill");
+    const nav=$("nav"), prev=$("prev"), next=$("next");
 
-    const btn1 = $("btn1");
-    const btn2 = $("btn2");
-    const btn3 = $("btn3");
-    const btn4 = $("btn4");
-    const finishBtn = $("finishBtn");
+    // Storage keys
+    const LS_DONE="abc_done_letters";
+    const LS_LASTTEST="abc_last_test_m";
+    const LS_UNLOCK="abc_unlock_idx";
+    const LS_NEXTMS="abc_next_unlock_ms";
 
-    const lockStatus = $("lockStatus");
-    const lockFill = $("lockFill");
-    const nav = $("nav");
-    const prev = $("prev");
-    const next = $("next");
-
-    /* ---------- Persistent keys ---------- */
-    const LS_KEY_DONE = "abc_done_letters";
-    const LS_KEY_LAST_TEST = "abc_last_test_m";
-    const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";
-    const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";
-
-    /* ---------- State ---------- */
-    let letterIdx = 0;
-    let step = 1; // 1..5
+    /* ------------------- App state ------------------- */
+    let letterIdx = 0;     // which letter you are viewing
+    let step = 1;          // 1..5 (after ④ -> 5 = show Finish)
     let doneList = loadDoneList();
     let doneSet = new Set(doneList);
-    let unlockIdx = ensureNumber(LS_KEY_UNLOCK_IDX, 0);     // newest unlocked
-    let nextUnlockMs = ensureNumber(LS_KEY_NEXT_UNLOCK, 0); // 0 until finished newest
+    let unlockIdx = ensureNumber(LS_UNLOCK, 0); // newest unlocked letter (starts at A=0)
+    let nextUnlockMs = ensureNumber(LS_NEXTMS, 0); // when the next letter unlocks (0 means none scheduled)
 
-    /* ---------- Helpers ---------- */
     function ensureNumber(key, def){
       const raw = localStorage.getItem(key);
-      if (raw === null || raw === undefined){ localStorage.setItem(key, String(def)); return def; }
-      const n = Number(raw); return Number.isFinite(n) ? n : def;
+      if (raw==null){ localStorage.setItem(key, String(def)); return def; }
+      const n=Number(raw); return Number.isFinite(n)?n:def;
     }
     function loadDoneList(){
-      try{ const raw = JSON.parse(localStorage.getItem(LS_KEY_DONE) || "[]"); return Array.isArray(raw) ? raw : []; }
-      catch{ return []; }
+      try{ const raw=JSON.parse(localStorage.getItem(LS_DONE)||"[]"); return Array.isArray(raw)?raw:[]; }catch{ return []; }
     }
-    function saveDone(){ try{ localStorage.setItem(LS_KEY_DONE, JSON.stringify(doneList)); }catch{} }
-    function saveNumber(key, val){ try{ localStorage.setItem(key, String(val)); }catch{} }
+    function saveDone(){ try{ localStorage.setItem(LS_DONE, JSON.stringify(doneList)); }catch{} }
+    function saveNum(key,val){ try{ localStorage.setItem(key, String(val)); }catch{} }
 
+    /* ------------------- Cards & assets ------------------- */
     function getCardBase(i){ return i*4; }
     function showCard(n){
       const base = getCardBase(Math.min(letterIdx, MAX_IDX));
       const num = base + n; // 1..4
       const src = `./${num}.jpg`;
       letterImg.src = src;
-      letterImg.alt = `レター画像`;
-      letterImg.onerror = ()=>{
-        placeholder.style.display = 'block';
-        placeholder.textContent = `画像が見つかりません: ${src}\n置き方: A=1-4.jpg, B=5-8.jpg, ... Z=101-104.jpg`;
-      };
-      letterImg.onload = ()=>{ placeholder.style.display = 'none'; };
+      letterImg.alt = "レター画像";
+      letterImg.onerror = ()=>{ placeholder.style.display='block'; placeholder.textContent=`画像が見つかりません: ${src}\nA=1-4.jpg, B=5-8.jpg, … Z=101-104.jpg`; };
+      letterImg.onload = ()=>{ placeholder.style.display='none'; };
     }
 
-    /* ---------- UI ---------- */
-    function updateAZMeter(){
-      // Move with CURRENT letter index (your request)
-      const pct = (letterIdx / MAX_IDX) * 100;
-      azFill.style.width = pct + "%";
-    }
+    /* ------------------- UI updates ------------------- */
+    function updateMeter(){ azFill.style.width = (letterIdx/MAX_IDX*100) + "%"; }
+
     function msToHMS(ms){
-      const s = Math.max(0, Math.floor(ms / 1000));
-      const h = Math.floor(s / 3600);
-      const m = Math.floor((s % 3600) / 60);
+      const s = Math.max(0, Math.floor(ms/1000));
+      const h = Math.floor(s/3600);
+      const m = Math.floor((s%3600)/60);
       const sec = s % 60;
       return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
     }
-    function updateCountdownUI(){
+
+    function updateCountdown(){
       if (unlockIdx >= MAX_IDX){
         lockStatus.innerHTML = `<span class="lock-unlocked">✅ <strong>全ての文字がアンロック済み</strong></span>`;
-        lockFill.style.width = '100%';
-        return;
+        lockFill.style.width = '100%'; return;
       }
-      if (nextUnlockMs > 0){
+      if (nextUnlockMs>0){
         const remaining = Math.max(0, nextUnlockMs - Date.now());
-        const total = 24*60*60*1000;
-        const pct = Math.min(1, 1 - (remaining / total));
-        lockFill.style.width = (pct*100).toFixed(1) + '%';
+        const pct = Math.min(1, 1 - (remaining / (24*60*60*1000)));
         lockStatus.innerHTML = `<span class="clock">${msToHMS(remaining)}</span> 後にアンロック`;
+        lockFill.style.width = (pct*100).toFixed(1) + '%';
       }else{
-        lockFill.style.width = '0%';
         lockStatus.innerHTML = `<span class="clock">24:00:00</span> 後にアンロック`;
+        lockFill.style.width = '0%';
       }
     }
-    function updateNavButtons(){
-      // show arrows only after B unlocked
-      if (unlockIdx >= 1) nav.classList.add('show'); else nav.classList.remove('show');
-      prev.disabled = (letterIdx <= 0);
-      next.disabled = (letterIdx >= unlockIdx);
+
+    function updateNav(){
+      // Show arrows once B (idx 1) is unlocked
+      if (unlockIdx>=1) nav.classList.add('show'); else nav.classList.remove('show');
+      prev.disabled = (letterIdx<=0);
+      next.disabled = (letterIdx>=unlockIdx); // cannot pass newest unlocked
     }
+
     function updateFinishVisibility(){
       const L = letters[letterIdx];
-      const isNewest = (letterIdx === unlockIdx);
-      const canShowFinish = (step === 5) && isNewest && !doneSet.has(L);
-      finishBtn.style.display = canShowFinish ? 'inline-block' : 'none';
-    }
-    function updateTop(){
-      updateAZMeter();
-      updateCountdownUI();
-      updateNavButtons();
-      updateFinishVisibility();
+      const isNewest = (letterIdx===unlockIdx);
+      const canShow = (step===5) && isNewest && !doneSet.has(L);
+      finishBtn.style.display = canShow ? 'inline-block' : 'none';
     }
 
-    function clampToUnlocked(i){
-      return Math.max(0, Math.min(i, unlockIdx));
-    }
+    function updateTop(){ updateMeter(); updateCountdown(); updateNav(); updateFinishVisibility(); }
 
-    function resetButtons(){
-      [btn1,btn2,btn3,btn4].forEach(b=>{ b.classList.remove('done'); b.disabled = true; });
-      btn1.disabled = false; // start with ①
-    }
+    /* ------------------- Flow helpers ------------------- */
+    function clampToUnlocked(i){ return Math.max(0, Math.min(i, unlockIdx)); }
 
-    function advanceStep(validButton, expectedStep){
-      if (step !== expectedStep) return; // strict order
-      validButton.classList.add('done');
-      validButton.disabled = true;
-      step++;
-      if (step === 2) btn2.disabled = false;
-      if (step === 3) btn3.disabled = false;
-      if (step === 4) btn4.disabled = false;
-      updateFinishVisibility(); // show Finish after ④ -> step===5
-    }
-
-    function playClick(){ try{ const el=$("clickAudio"); el.currentTime=0; el.play().catch(()=>{});}catch{} }
-    function playLetterTimes(times){
-      const L = letters[letterIdx];
-      const name = L.repeat(times); // A, AA, AAA, AAAA
-      playSound(`assets/audio/${name}.m4a`, 1);
-    }
-    function playLetterCueByIndex(idx){
-      const L = letters[idx];
-      playSound(`assets/audio/${L}.m4a`, 1.0);
-    }
-
-    function firstUnfinishedUnlocked(){
-      for (let i=0;i<=unlockIdx;i++){
-        if (!doneSet.has(letters[i])) return i;
-      }
-      return clampToUnlocked(letterIdx);
+    function resetSteps(){
+      step=1;
+      [btn1,btn2,btn3,btn4].forEach(b=>{ b.classList.remove('done'); b.disabled=true; });
+      btn1.disabled=false;
     }
 
     function onEnterLetter(){
       const L = letters[letterIdx];
-      step = 1;
       showCard(1);
-      resetButtons();
-      if (doneSet.has(L)) {
-        // already finished → no steps to do
-        [btn1,btn2,btn3,btn4].forEach(b => b.disabled = true);
-      }
+      resetSteps();
+      // If this letter is already finished, steps stay disabled and Finish hidden.
+      if (doneSet.has(L)){ [btn1,btn2,btn3,btn4].forEach(b=>b.disabled=true); }
       updateTop();
     }
 
-    /* ---------- Start flow ---------- */
+    /* ------------------- Start ------------------- */
     function startAppFull(){
-      // hide hello
-      const hello = $("hello"); if (hello) hello.style.display = 'none';
-      // audio priming
+      hello.style.display='none';
       ensureAudioCtx();
-      // ensure unlock arrows if B+
-      updateNavButtons();
-      // jump to first unfinished among unlocked
-      letterIdx = clampToUnlocked(firstUnfinishedUnlocked());
+      // Jump to first unfinished among unlocked (or stay at current)
+      let target = letterIdx;
+      for (let i=0;i<=unlockIdx;i++){ if (!doneSet.has(letters[i])){ target=i; break; } }
+      letterIdx = clampToUnlocked(target);
       onEnterLetter();
     }
-    $("startBtn").addEventListener('click', (e)=>{ e.preventDefault(); location.hash='#go'; startAppFull(); });
+    startBtn.addEventListener('click', (e)=>{ e.preventDefault(); location.hash='#go'; startAppFull(); });
 
-    // deep-link support
+    // Deep link: https://.../#go
     document.addEventListener('DOMContentLoaded', ()=>{
-      if (location.hash === '#go') startAppFull();
-      // also start countdown ticker even if user hasn’t finished anything yet
-      setInterval(()=>{ updateCountdownUI(); }, 1000);
-      // poll unlock each second (strict Date.now() gate)
-      setInterval(()=>{ refreshUnlocks(); }, 1000);
+      if (location.hash==='#go') startAppFull();
+      // Always run tickers
+      setInterval(tick, 1000);
     });
 
-    /* ---------- Gate & unlock ---------- */
-    function refreshUnlocks(){
-      if (nextUnlockMs > 0 && Date.now() >= nextUnlockMs && unlockIdx < MAX_IDX){
-        unlockIdx = Math.min(unlockIdx + 1, MAX_IDX);
+    function tick(){
+      // live countdown
+      updateCountdown();
+      // unlock boundary when time reached
+      if (nextUnlockMs>0 && Date.now()>=nextUnlockMs && unlockIdx<MAX_IDX){
+        unlockIdx = Math.min(unlockIdx+1, MAX_IDX);
         nextUnlockMs = 0;
-        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+        saveNum(LS_UNLOCK, unlockIdx);
+        saveNum(LS_NEXTMS, nextUnlockMs);
+        updateNav();
       }
-      updateTop();
     }
 
-    /* ---------- Button handlers (strict order) ---------- */
-    btn1.addEventListener('click', ()=>{ if (btn1.disabled) return; ensureAudioCtx(); showCard(1); playLetterTimes(1); advanceStep(btn1, 1); }, {passive:true});
-    btn2.addEventListener('click', ()=>{ if (btn2.disabled) return; ensureAudioCtx(); showCard(2); playLetterTimes(2); advanceStep(btn2, 2); }, {passive:true});
-    btn3.addEventListener('click', ()=>{ if (btn3.disabled) return; ensureAudioCtx(); showCard(3); playLetterTimes(3); advanceStep(btn3, 3); }, {passive:true});
-    btn4.addEventListener('click', ()=>{ if (btn4.disabled) return; ensureAudioCtx(); showCard(4); playLetterTimes(4); advanceStep(btn4, 4); }, {passive:true});
+    /* ------------------- Strict ①→④ ------------------- */
+    function advanceStep(btn, expected){
+      if (step!==expected) return;           // enforce order
+      btn.classList.add('done');
+      btn.disabled=true;
+      step++;
+      if (step===2) btn2.disabled=false;
+      if (step===3) btn3.disabled=false;
+      if (step===4) btn4.disabled=false;
+      if (step===5) updateFinishVisibility(); // show Finish after ④
+    }
 
-    /* ---------- Finish (once per letter) ---------- */
-    function startFinishConfetti(duration=2000){
-      const c = $("confettiFinish");
-      const x = c.getContext("2d");
-      function resize(){ c.width = innerWidth; c.height = innerHeight; }
-      resize(); window.addEventListener('resize', resize, {once:true});
-      let items=[], start=Date.now();
-      for(let i=0;i<260;i++){
-        items.push({x:Math.random()*c.width, y:-Math.random()*c.height, r:Math.random()*7+3, vy:Math.random()*2+1.2, color:`hsl(${Math.random()*360},100%,55%)`});
-      }
+    btn1.addEventListener('click', ()=>{
+      if (btn1.disabled) return;
+      ensureAudioCtx(); showCard(1);
+      playSound(`assets/audio/${letters[letterIdx]}.m4a`, 1);
+      advanceStep(btn1,1);
+    });
+
+    btn2.addEventListener('click', ()=>{
+      if (btn2.disabled) return;
+      ensureAudioCtx(); showCard(2);
+      const L = letters[letterIdx]; playSound(`assets/audio/${L}${L}.m4a`, 1);
+      advanceStep(btn2,2);
+    });
+
+    btn3.addEventListener('click', ()=>{
+      if (btn3.disabled) return;
+      ensureAudioCtx(); showCard(3);
+      const L = letters[letterIdx]; playSound(`assets/audio/${L}${L}${L}.m4a`, 1);
+      advanceStep(btn3,3);
+    });
+
+    btn4.addEventListener('click', ()=>{
+      if (btn4.disabled) return;
+      ensureAudioCtx(); showCard(4);
+      const L = letters[letterIdx]; playSound(`assets/audio/${L}${L}${L}${L}.m4a`, 1);
+      advanceStep(btn4,4); // -> step==5
+    });
+
+    /* ------------------- Finish (once per letter) ------------------- */
+    function confetti(duration=1500){
+      const c=$("confettiFinish"), x=c.getContext("2d");
+      function resize(){ c.width=innerWidth; c.height=innerHeight; }
+      resize(); addEventListener('resize', resize, {once:true});
+      const pieces=Array.from({length:220},()=>({x:Math.random()*c.width,y:-Math.random()*c.height,r:Math.random()*7+3,vy:Math.random()*2+1.2,color:`hsl(${Math.random()*360},100%,55%)`}));
+      const start=Date.now();
       (function draw(){
         x.clearRect(0,0,c.width,c.height);
-        for(const p of items){
-          x.beginPath(); x.arc(p.x,p.y,p.r,0,Math.PI*2); x.fillStyle=p.color; x.fill();
-          p.y += p.vy*2; if(p.y>c.height+12){ p.y = -10; p.x = Math.random()*c.width; }
-        }
-        if(Date.now()-start<duration){ requestAnimationFrame(draw); } else { x.clearRect(0,0,c.width,c.height); }
+        for(const p of pieces){ x.beginPath(); x.arc(p.x,p.y,p.r,0,2*Math.PI); x.fillStyle=p.color; x.fill(); p.y+=p.vy*2; if(p.y>c.height+12){ p.y=-10; p.x=Math.random()*c.width; } }
+        if(Date.now()-start<duration) requestAnimationFrame(draw); else x.clearRect(0,0,c.width,c.height);
       })();
     }
 
     finishBtn.addEventListener('click', ()=>{
-      playClick();
       const L = letters[letterIdx];
-      if (doneSet.has(L)) return;
-
-      doneSet.add(L);
-      doneList.push(L);
+      if (doneSet.has(L)) return;         // once per letter
+      doneSet.add(L); doneList.push(L);   // record
       saveDone();
-
-      playSound('assets/sfx/magic.mp3', 1.2);
-      startFinishConfetti(2000);
-      finishBtn.style.display='none';
-      [btn1,btn2,btn3,btn4].forEach(b=> b.disabled = true);
-
-      // start strict 24h timer ONLY when finishing newest and not Z
-      if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
+      // Start strict 24h timer only when finishing the newest unlocked (and not Z)
+      if (letterIdx===unlockIdx && unlockIdx<MAX_IDX){
         nextUnlockMs = Date.now() + 24*60*60*1000;
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
+        saveNum(LS_NEXTMS, nextUnlockMs);
       }
-
-      // Z end state
-      if (letterIdx === MAX_IDX){
-        letterImg.src = './finished.jpg';
-        letterImg.alt = 'FINISHED!';
-        updateTop();
-        return;
-      }
-
+      finishBtn.style.display='none';
+      [btn1,btn2,btn3,btn4].forEach(b=>b.disabled=true);
+      playSound('assets/sfx/magic.mp3',1.2);
+      confetti(1500);
       updateTop();
     });
 
-    /* ---------- Nav (hard clamp + disabled at edges) ---------- */
+    /* ------------------- Nav (review finished; clamp forward) ------------------- */
     prev.addEventListener('click', ()=>{
       letterIdx = Math.max(0, letterIdx-1);
       onEnterLetter();
     });
     next.addEventListener('click', ()=>{
-      letterIdx = Math.min(unlockIdx, letterIdx+1);
+      letterIdx = Math.min(unlockIdx, letterIdx+1); // never beyond newest unlocked
       onEnterLetter();
     });
   </script>
