@@ -69,7 +69,7 @@
     .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
-    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s}
+    .btn-audio{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;border-radius:18px;padding:16px 18px;font-size:18px;font-weight:900;color:#fff;cursor:pointer;box-shadow:0 10px 18px rgba(0,0,0,.20);transition:transform .12s, background .12s, opacity .12s}
     .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
@@ -78,6 +78,7 @@
     .btn3.done{background:#ffe08c;color:#111}
     .btn4.done{background:#9a86ff}
     .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
+    .btn-audio[disabled]{opacity:.45;cursor:not-allowed;transform:none}
 
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
@@ -264,7 +265,7 @@
     const test = document.getElementById("test");
     const tGrid = document.getElementById("tGrid");
     const tPlay = document.getElementById("tPlay");
-    theHint = document.getElementById("tHint"); // (kept for compatibility)
+    const tHint = document.getElementById("tHint");
     const tClose = document.getElementById("tClose");
     const tProgress = document.getElementById("tProgress");
 
@@ -275,6 +276,9 @@
     let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
     let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);
     let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
+
+    // Per-letter step (1..4). Reset each time we enter a letter.
+    let step = 1;
 
     /* ---------- Helpers ---------- */
     function loadDoneList(){
@@ -295,7 +299,7 @@
       letterImg.alt = `レター画像`;
     }
 
-    // A–Z meter now shows UNLOCKED boundary (not current cursor)
+    // A–Z meter shows UNLOCKED boundary (A → current max)
     function updateAZMeter(){
       const pct = (unlockIdx / MAX_IDX) * 100;
       azFill.style.width = pct + "%";
@@ -346,10 +350,15 @@
       updateAZMeter();
       updateCountdownUI();
       if (unlockIdx >= 1) nav.classList.add('show'); else nav.classList.remove('show');
-      // Show Finish button immediately for the NEW letter (only the latest unlocked, if not done)
+
+      // Finish button appears ONLY:
+      // - after ①②③④ done in order (step==5),
+      // - and only for the newest unlocked letter,
+      // - and only if that letter isn't already finished.
       const L = letters[letterIdx];
       const isNewest = (letterIdx === unlockIdx);
-      finishBtn.style.display = (!doneSet.has(L) && isNewest) ? 'inline-block' : 'none';
+      const canShowFinish = (step === 5) && isNewest && !doneSet.has(L);
+      finishBtn.style.display = canShowFinish ? 'inline-block' : 'none';
     }
 
     function clampToUnlocked(i){
@@ -357,8 +366,24 @@
       return Math.max(0, Math.min(i, limit));
     }
 
-    function setButtonColorsReset(){ [btn1,btn2,btn3,btn4].forEach(b=> b.classList.remove('done')); }
-    function markBtnDone(btn){ if(!btn.classList.contains('done')) btn.classList.add('done'); }
+    function resetButtons(){
+      [btn1,btn2,btn3,btn4].forEach(b=>{ b.classList.remove('done'); b.disabled = true; });
+      btn1.disabled = false; // start with ①
+    }
+
+    function advanceStep(validButton, expectedStep){
+      if (step !== expectedStep) return; // enforce exact order
+      validButton.classList.add('done');
+      validButton.disabled = true;
+      step++;
+      // enable next button if there is one
+      if (step === 2) btn2.disabled = false;
+      if (step === 3) btn3.disabled = false;
+      if (step === 4) btn4.disabled = false;
+
+      // after ④ -> step becomes 5
+      updateTop();
+    }
 
     function playClick(){ try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{} }
     function playLetterTimes(times){
@@ -382,9 +407,14 @@
 
     function onEnterLetter(){
       const L = letters[letterIdx];
-      setButtonColorsReset();
-      showCard(1);
-      updateTop(); // handles Finish button visibility for the newest letter
+      step = 1;                // restart sequence for this letter
+      showCard(1);             // show first card
+      resetButtons();          // ① enabled, others disabled
+      // If this letter is already finished, keep all disabled and hide Finish.
+      if (doneSet.has(L)) {
+        [btn1,btn2,btn3,btn4].forEach(b => b.disabled = true);
+      }
+      updateTop();
     }
 
     /* ---------- Start ---------- */
@@ -399,24 +429,40 @@
 
     if(location.hash === '#go'){ startAppFull(); }
 
-    /* ---------- Button handlers ---------- */
-    btn1.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(1); playLetterTimes(1); markBtnDone(btn1); }, {passive:true});
-    btn2.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(2); playLetterTimes(2); markBtnDone(btn2); }, {passive:true});
-    btn3.addEventListener('click', ()=>{ ensureAudioCtx(); showCard(3); playLetterTimes(3); markBtnDone(btn3); }, {passive:true});
-    btn4.addEventListener('click', ()=>{
-      ensureAudioCtx(); showCard(4); playLetterTimes(4); markBtnDone(btn4);
-      updateTop(); // keep Finish button logic consistent
+    /* ---------- Button handlers (strict order) ---------- */
+    btn1.addEventListener('click', ()=>{
+      if (btn1.disabled) return;
+      ensureAudioCtx(); showCard(1); playLetterTimes(1);
+      advanceStep(btn1, 1);
     }, {passive:true});
 
-    /* ---------- Finish & gating ---------- */
-    function startFinishConfetti(duration=5000){
+    btn2.addEventListener('click', ()=>{
+      if (btn2.disabled) return;
+      ensureAudioCtx(); showCard(2); playLetterTimes(2);
+      advanceStep(btn2, 2);
+    }, {passive:true});
+
+    btn3.addEventListener('click', ()=>{
+      if (btn3.disabled) return;
+      ensureAudioCtx(); showCard(3); playLetterTimes(3);
+      advanceStep(btn3, 3);
+    }, {passive:true});
+
+    btn4.addEventListener('click', ()=>{
+      if (btn4.disabled) return;
+      ensureAudioCtx(); showCard(4); playLetterTimes(4);
+      advanceStep(btn4, 4); // this sets step=5 -> Finish may appear (if newest & not done)
+    }, {passive:true});
+
+    /* ---------- Finish & gating (once per letter) ---------- */
+    function startFinishConfetti(duration=3000){
       const cFinish = document.getElementById("confettiFinish");
       const xFinish = cFinish.getContext("2d");
       function resize(){ cFinish.width = innerWidth; cFinish.height = innerHeight; }
       resize(); window.addEventListener('resize', resize, {once:true});
 
       let running = true;
-      const pieces = Array.from({length:360}).map(()=>({
+      const pieces = Array.from({length:300}).map(()=>({
         x: Math.random()*cFinish.width, y: -Math.random()*cFinish.height,
         r: Math.random()*8+3, vy: Math.random()*2+1.5,
         color: `hsl(${Math.random()*360},100%,55%)`
@@ -437,17 +483,19 @@
     finishBtn.onclick = ()=>{
       playClick();
       const L = letters[letterIdx];
-      if(!doneSet.has(L)){
-        doneSet.add(L);
-        doneList.push(L);
-        saveDone();
-      }
+      if (doneSet.has(L)) return; // already finished once
+
+      // record completion once (per letter)
+      doneSet.add(L);
+      doneList.push(L);
+      saveDone();
 
       playSound('assets/sfx/magic.mp3', 1.5);
-      startFinishConfetti(3000); // shorter, punchier
+      startFinishConfetti(3000);
 
       finishBtn.style.display='none';
-      setButtonColorsReset();
+      // After finishing, lock buttons for this letter
+      [btn1,btn2,btn3,btn4].forEach(b=> b.disabled = true);
 
       // Start strict 24h timer ONLY if finishing the newest unlocked letter AND not Z
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
@@ -470,7 +518,6 @@
         openTest();
       }
 
-      showCard(1);
       updateTop();
     };
 
@@ -576,7 +623,7 @@
       }
 
       tPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-      if(theHint){ theHint.textContent = ''; }
+      if(tHint){ tHint.textContent = ''; }
       tClose.style.display = 'none';
       tProgress.textContent = '1 / 1';
       test.classList.add('active');
