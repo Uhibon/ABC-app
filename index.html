@@ -19,18 +19,17 @@
   </script>
 
   <style>
-    :root { --vh: 100vh; } /* will be corrected by JS on mobile */
+    :root { --vh: 100vh; --safe-top: 0px; }
 
     html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-    body{ -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    body{ -webkit-tap-highlight-color: transparent; touch-action: manipulation; background:#fff; }
     .bg{position:fixed;inset:0;background:url("./booha-background.jpg") center/cover no-repeat;z-index:-2}
     .overlay{position:fixed;inset:0;background:rgba(255,255,255,.22);z-index:-1}
-
-    #go:target ~ #hello{display:none} /* CSS-only fallback */
+    #go:target ~ #hello{display:none}
 
     /* Hello */
     .hello{position:fixed;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.78);z-index:10}
-    .hello-card{position:relative;z-index:11;background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
+    .hello-card{background:#fff;border-radius:20px;padding:24px;max-width:480px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,.2)}
     .hello-card img{width:140px;height:auto;margin:0 auto;display:block}
     .hello-card h1{margin:12px 0 6px;font-size:24px;line-height:1.2}
     .hello-card p{margin:8px 0;font-size:14px;color:#444}
@@ -43,7 +42,9 @@
     /* Top bar */
     .topbar{
       display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
-      padding:10px 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+      padding:10px 16px;
+      /* Mobile fix: keep below visible viewport top inset (URL bar / notch) */
+      padding-top: calc(var(--safe-top, 0px) + 10px);
     }
     .chip{
       background:#ffffffcc; backdrop-filter:saturate(1.2) blur(2px);
@@ -52,29 +53,24 @@
       box-shadow:0 6px 14px rgba(0,0,0,.06);
     }
     .lab{font-weight:900}
-    .rail{position:relative; width:200px; height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
+    .rail{position:relative; width:clamp(140px, 42vw, 240px); height:10px; background:#ffe0ef; border-radius:999px; overflow:hidden}
     .fill{position:absolute; inset:0 auto 0 0; width:0; height:100%; background:#ff4da6}
-
     .rail.clock{background:#e8e3ff}
     .fill.clock{background:#7c5cff}
     .count{font-weight:900; font-variant-numeric: tabular-nums}
 
-    /* Letter screen: use --vh to avoid mobile 100vh bugs */
+    /* Letter screen */
     .letter-screen{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      height:calc(var(--vh) - 96px); /* was calc(100vh - 96px) */
+      height:calc(var(--vh) - 96px); /* Mobile 100vh fix via JS-set --vh */
       padding:16px;gap:16px;text-align:center
     }
     .card-wrap{display:grid;place-items:center;width:min(900px,96vw);min-height:40vh}
-    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px;box-shadow:none}
+    .card-wrap img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:12px}
 
     /* Practice nav (appears from B) */
-    .nav{
-      display:flex; gap:8px; margin-top:6px; visibility:hidden;
-    }
-    .nav button{
-      padding:12px 16px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:#fff; cursor:pointer; font-weight:800;
-    }
+    .nav{display:flex; gap:8px; margin-top:6px; visibility:hidden;}
+    .nav button{padding:12px 16px; border-radius:12px; border:1px solid rgba(0,0,0,.08); background:#fff; cursor:pointer; font-weight:800;}
     .nav button[disabled]{opacity:.45; cursor:not-allowed}
 
     .buttons{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:12px;width:min(680px,92vw)}
@@ -82,10 +78,7 @@
     .btn-audio .num{font-size:26px}
     .btn1{background:#ff5959}.btn2{background:#06b6d4}.btn3{background:#ffd166;color:#111}.btn4{background:#7c5cff}
     .btn-audio:active{transform:scale(.94)}
-    .btn1.done{background:#ff7a7a}
-    .btn2.done{background:#16c1de}
-    .btn3.done{background:#ffe08c;color:#111}
-    .btn4.done{background:#9a86ff}
+    .btn1.done{background:#ff7a7a}.btn2.done{background:#16c1de}.btn3.done{background:#ffe08c;color:#111}.btn4.done{background:#9a86ff}
     .btn-audio.done::after{content:" ✓";font-weight:900;font-size:14px;margin-left:4px}
     .btn-audio.locked{opacity:.45;pointer-events:none}
 
@@ -94,7 +87,7 @@
 
     canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 
-    /* QUIZ (internal) */
+    /* QUIZ */
     #quiz{position:fixed;inset:0;z-index:80;display:none}
     #quiz.active{display:block}
     .q-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -106,8 +99,7 @@
     .q-item{background:#f7f7fb;border:2px solid transparent;border-radius:14px;padding:8px;display:grid;place-items:center;cursor:pointer;transition:transform .1s, border-color .12s}
     .q-item img{width:100%;height:170px;object-fit:contain}
     .q-item:active{transform:scale(.98)}
-    .q-item.correct{border-color:#22c55e}
-    .q-item.wrong{border-color:#ef4444}
+    .q-item.correct{border-color:#22c55e}.q-item.wrong{border-color:#ef4444}
     .q-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
     .q-btn{background:#111;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:900;cursor:pointer}
     .q-ok{background:#28a745}
@@ -118,35 +110,24 @@
 </head>
 <body>
   <div id="go"></div>
-
-  <div class="bg"></div>
-  <div class="overlay"></div>
+  <div class="bg"></div><div class="overlay"></div>
 
   <!-- Top bar -->
   <div class="topbar">
-    <!-- Left: PROGRESS A→Z METER with labels -->
     <div class="chip">
       <span class="lab">A</span>
-      <div class="rail" aria-label="A→Z 進捗">
-        <div id="azFill" class="fill"></div>
-      </div>
+      <div class="rail"><div id="azFill" class="fill"></div></div>
       <span class="lab">Z</span>
     </div>
-
-    <!-- Center: Booha -->
     <img src="./playful-pink-booha.png" alt="Booha" style="width:60px;height:60px;object-fit:contain" />
-
-    <!-- Right: purple live countdown -->
     <div class="chip">
       <span class="lab">次のアンロック</span>
-      <div class="rail clock" aria-label="24h カウントダウン">
-        <div id="cdFill" class="fill clock"></div>
-      </div>
+      <div class="rail clock"><div id="cdFill" class="fill clock"></div></div>
       <span id="cdText" class="count">00:00:00</span>
     </div>
   </div>
 
-  <!-- Hello / Start -->
+  <!-- Hello -->
   <div id="hello" class="hello" aria-live="polite">
     <div class="hello-card">
       <img src="./playful-pink-booha.png" alt="Boohaロゴ" />
@@ -157,25 +138,19 @@
     </div>
   </div>
 
-  <!-- Letter screen -->
+  <!-- Main screen -->
   <div class="letter-screen">
-    <!-- Practice arrows (from B; finished letters only; never past lock) -->
     <div class="nav" id="nav">
       <button id="prev" type="button">← もどる</button>
       <button id="next" type="button">すすむ →</button>
     </div>
-
-    <div class="card-wrap">
-      <img id="letterImg" src="./1.jpg" alt="レター画像" loading="eager" decoding="async" />
-    </div>
-
+    <div class="card-wrap"><img id="letterImg" src="./1.jpg" alt="レター画像" /></div>
     <div id="btnRow" class="buttons">
       <button id="btn1" type="button" class="btn-audio btn1"><span class="num">①</span><small>リピート</small></button>
       <button id="btn2" type="button" class="btn-audio btn2"><span class="num">②</span><small>いっしょに読む</small></button>
       <button id="btn3" type="button" class="btn-audio btn3"><span class="num">③</span><small>リピート</small></button>
       <button id="btn4" type="button" class="btn-audio btn4"><span class="num">④</span><small>スペシャル！</small></button>
     </div>
-
     <button id="finishBtn" type="button" class="btn-finish">できた！</button>
   </div>
 
@@ -185,16 +160,13 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto"></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto"></audio>
 
-  <!-- QUIZ (internal) -->
+  <!-- QUIZ -->
   <div id="quiz" aria-hidden="true">
     <div class="q-back"></div>
     <div class="q-card" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
       <h2 id="quizTitle" class="q-title">クイズ</h2>
       <p class="q-prompt">音声を聞いて、正しい<strong>文字</strong>をえらぼう！</p>
-      <div class="q-ctrl">
-        <button id="qPlay" type="button" class="q-btn">▶︎ 再生</button>
-        <span id="qHint" class="q-hint"></span>
-      </div>
+      <div class="q-ctrl"><button id="qPlay" type="button" class="q-btn">▶︎ 再生</button><span id="qHint" class="q-hint"></span></div>
       <div id="qGrid" class="q-grid"></div>
       <div class="q-bottom">
         <div id="qProgress" class="q-progress">1 / 1</div>
@@ -204,30 +176,40 @@
   </div>
 
   <script>
-    /* ---------- Viewport fix for mobile 100vh ---------- */
+    /* ---------- Viewport + Safe Top Fix ---------- */
     function setVH(){ document.documentElement.style.setProperty('--vh', window.innerHeight + 'px'); }
     setVH(); window.addEventListener('resize', setVH); window.addEventListener('orientationchange', setVH);
 
-    /* ---------- Versioned reset (bump to clear stale cache on mobile) ---------- */
-    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v3";
+    (function safeTopInit(){
+      function setSafeTop(px){ document.documentElement.style.setProperty('--safe-top', px + 'px'); }
+      try{
+        if (window.visualViewport) {
+          const vv = window.visualViewport;
+          const update = ()=> setSafeTop(Math.max(0, vv.offsetTop || 0));
+          vv.addEventListener('resize', update);
+          vv.addEventListener('scroll', update);
+          update(); // initial
+        } else { setSafeTop(0); }
+      }catch{ setSafeTop(0); }
+    })();
+
+    /* ---------- Versioned reset (start at A; bump to clear stale caches) ---------- */
+    const APP_VERSION = "abc-2025-10-07AZ-progress-nav-v4";
     const LS_KEY_APP_VERSION = "abc_app_version";
-    (function versionReset(){
+    (function(){
       try{
         const v = localStorage.getItem(LS_KEY_APP_VERSION);
         if(v !== APP_VERSION){
-          localStorage.removeItem("abc_done_letters");
-          localStorage.removeItem("abc_last_test_m");
-          localStorage.removeItem("abc_unlock_idx");
-          localStorage.removeItem("abc_next_unlock_ms");
+          localStorage.clear();
           localStorage.setItem(LS_KEY_APP_VERSION, APP_VERSION);
         }
       }catch{}
     })();
 
-    /* ---------- Start link: make sure tap always triggers init ---------- */
+    /* ---------- Ensure start works on tap ---------- */
     const startLink = document.getElementById('startLink');
-    startLink.addEventListener('click', (e)=>{ startAppFull(); });
-    startLink.addEventListener('touchstart', ()=>{ startAppFull(); }, {passive:true});
+    startLink.addEventListener('click', ()=>startAppFull());
+    startLink.addEventListener('touchstart', ()=>startAppFull(), {passive:true});
 
     /* ---------- Audio (no overlap) ---------- */
     let activeAudio = null;
@@ -240,11 +222,13 @@
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26
     const MAX_IDX = 25; const TOTAL_LETTERS = 26; const H24 = 24*60*60*1000;
 
+    // Storage keys
     const LS_KEY_DONE = "abc_done_letters";
     const LS_KEY_LAST_TEST = "abc_last_test_m";
     const LS_KEY_UNLOCK_IDX = "abc_unlock_idx";
     const LS_KEY_NEXT_UNLOCK = "abc_next_unlock_ms";
 
+    // DOM refs
     const azFill = document.getElementById("azFill");
     const cdFill = document.getElementById("cdFill");
     const cdText = document.getElementById("cdText");
@@ -264,6 +248,7 @@
     const clickAudio = document.getElementById("clickAudio");
     const magicAudio = document.getElementById("magicAudio");
 
+    // Quiz
     const quiz = document.getElementById("quiz");
     const qGrid = document.getElementById("qGrid");
     const qPlay = document.getElementById("qPlay");
@@ -291,7 +276,7 @@
 
     function showCard(n){
       const base = getCardBase(Math.min(letterIdx, MAX_IDX));
-      const num = base + n;
+      const num = base + n; // 1..4
       letterImg.src = `./${num}.jpg`;
       letterImg.alt = `レター画像`;
     }
@@ -303,11 +288,11 @@
       finishBtn.style.display = 'none';
       nav.style.visibility = 'visible';
       prev.disabled = getPrevFinished(letterIdx) === null;
-      next.disabled = true;
+      next.disabled = true; // nowhere to go after finished page
     }
 
     function updateProgressMeter(){
-      const pct = (doneSet.size / TOTAL_LETTERS) * 100;
+      const pct = (doneSet.size / TOTAL_LETTERS) * 100; // progress only
       azFill.style.width = pct + "%";
     }
 
@@ -358,11 +343,12 @@
         b.classList.toggle('locked', step>currentStep);
         b.classList.toggle('done', step<currentStep);
       });
+      // Single-use: show only if letter not already finished
       const show = (currentStep>4) && !doneSet.has(letters[letterIdx]);
       finishBtn.style.display = show ? 'inline-block' : 'none';
     }
 
-    /* ---------- Practice Nav (finished letters only) ---------- */
+    /* ---------- Practice Nav (finished letters only; never past lock) ---------- */
     function getFinishedIndicesSorted(){
       return doneList.map(L=>letters.indexOf(L)).filter(i=>i>=0).sort((a,b)=>a-b);
     }
@@ -387,7 +373,7 @@
       const p = getPrevFinished(letterIdx);
       if(p === null) return;
       letterIdx = p;
-      currentStep = 5;
+      currentStep = 5; // review mode
       stopActive(); resetButtons(); lockButtonsByStep();
       showCard(1);
       updateNavVisibility();
@@ -396,7 +382,7 @@
       const n = getNextFinished(letterIdx);
       if(n === null) return;
       letterIdx = n;
-      currentStep = 5;
+      currentStep = 5; // review mode
       stopActive(); resetButtons(); lockButtonsByStep();
       showCard(1);
       updateNavVisibility();
@@ -410,7 +396,7 @@
       playSound(src);
     }
 
-    /* ---------- Start ---------- */
+    /* ---------- App start ---------- */
     function firstUnfinishedUnlocked(){
       for (let i=0;i<=unlockIdx;i++){
         if (!doneSet.has(letters[i])) return i;
@@ -439,7 +425,7 @@
 
     function handleStep(step){
       if(doneSet.size === TOTAL_LETTERS) return;
-      if(step !== currentStep) return;
+      if(step !== currentStep) return; // enforce ①→②→③→④
       showCard(step);
       playLetterTimes(step);
       currentStep++;
@@ -458,7 +444,7 @@
 
     finishBtn.onclick = ()=>{
       const L = letters[letterIdx];
-      if(doneSet.has(L)) return;
+      if(doneSet.has(L)) return; // single-use
 
       try{ clickAudio.currentTime=0; clickAudio.play().catch(()=>{});}catch{}
       doneSet.add(L); doneList.push(L); saveDone();
@@ -467,6 +453,7 @@
       startFireworks(4000); /* longer confetti on finish */
       finishBtn.style.display = 'none';
 
+      // Schedule next unlock after finishing current highest unlocked
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
         nextUnlockMs = Date.now() + H24;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
@@ -504,7 +491,9 @@
         else { ctx.clearRect(0,0,canvas.width,canvas.height); confettiRunning=false; }
       })();
     }
-    window.onresize = resize; function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; } resize();
+    window.onresize = resize;
+    function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+    resize();
 
     /* ---------- QUIZ (confetti longer too) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
@@ -534,7 +523,7 @@
           if(ok){
             try{ magicAudio.currentTime=0; magicAudio.play().catch(()=>{});}catch{}
             [...qGrid.querySelectorAll('.q-item')].forEach(b=>b.disabled=true);
-            startFireworks(4000);
+            startFireworks(4000); /* longer confetti on quiz win */
             qClose.style.display = 'inline-block';
           }else{
             setTimeout(()=> btn.classList.remove('wrong'), 380);
@@ -544,7 +533,9 @@
       }
 
       qPlay.onclick = ()=> playLetterCueByIndex(correctIdx);
-      qHint.textContent = ''; qClose.style.display = 'none'; qProgress.textContent = '1 / 1';
+      qHint.textContent = '';
+      qClose.style.display = 'none';
+      qProgress.textContent = '1 / 1';
       quiz.classList.add('active');
 
       playLetterCueByIndex(correctIdx);
