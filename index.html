@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="ブーハABC">
 
-  <!-- Minimal early fallback -->
+  <!-- Minimal early fallback (kept tiny) -->
   <script>
     function startApp(){
       const hello = document.getElementById('hello');
@@ -80,14 +80,10 @@
     .btn-finish{margin-top:4px;padding:14px 18px;background:#28a745;color:#fff;font-size:20px;font-weight:900;border:0;border-radius:14px;cursor:pointer;display:none;box-shadow:0 10px 18px rgba(0,0,0,.18)}
     .btn-finish:active{transform:scale(.96)}
 
-    .dev{position:fixed;left:0;right:0;bottom:8px;display:flex;gap:8px;justify-content:center;z-index:60}
-    .tbtn{background:#111;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;opacity:.9;cursor:pointer}
-    .tbtn:active{transform:scale(.98)}
-
     canvas#confettiFinish{position:fixed;inset:0;pointer-events:none;z-index:50}
     canvas#confettiQuiz{position:fixed;inset:0;pointer-events:none;z-index:200}
 
-    /* === TEST PAGE (modal) === */
+    /* === TEST PAGE (modal — kept, opens automatically at milestones) === */
     #test{position:fixed;inset:0;z-index:80;display:none}
     #test.active{display:block}
     .t-back{position:absolute;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px)}
@@ -107,17 +103,6 @@
     .t-progress{font-weight:800}
     .t-hint{display:none}
     @media (max-width:820px){.t-grid{grid-template-columns:repeat(2,1fr)}.t-item img{height:140px}}
-
-    /* Floating tiny control panel */
-    .ctrl{position:fixed;right:10px;bottom:10px;z-index:70}
-    .ctrl > .fab{width:42px;height:42px;border-radius:999px;border:0;background:#111;color:#fff;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(0,0,0,.28)}
-    .ctrl .panel{display:none;position:absolute;right:50px;bottom:0;background:#fff;border-radius:14px;padding:10px;box-shadow:0 14px 30px rgba(0,0,0,.25);min-width:190px}
-    .ctrl.open .panel{display:block}
-    .ctrl .row{display:flex;gap:6px;margin:6px 0}
-    .ctrl .panel button,.ctrl .panel label{font-size:12px}
-    .ctrl .panel button{border:0;background:#f1f5f9;border-radius:10px;padding:6px 8px;cursor:pointer}
-    .ctrl .panel button:active{transform:scale(.98)}
-    .ctrl .panel .toggle{display:flex;align-items:center;gap:6px}
   </style>
 </head>
 <body>
@@ -149,7 +134,7 @@
       </div>
       <div class="lockmeter">
         <i id="lockFill"></i>
-        <!-- ghost removed -->
+        <!-- ghost intentionally removed -->
       </div>
     </div>
   </div>
@@ -166,11 +151,6 @@
     <button id="finishBtn" class="btn-finish">できた！</button>
   </div>
 
-  <div class="dev">
-    <button id="prev" class="tbtn">←</button>
-    <button id="next" class="tbtn">→</button>
-  </div>
-
   <canvas id="confettiFinish"></canvas>
   <canvas id="confettiQuiz"></canvas>
 
@@ -178,7 +158,7 @@
   <audio id="clickAudio" src="assets/sfx/click.mp3" preload="auto" playsinline></audio>
   <audio id="magicAudio" src="assets/sfx/magic.mp3" preload="auto" playsinline></audio>
 
-  <!-- === TEST PAGE (modal) === -->
+  <!-- === TEST PAGE (auto only; no manual/DEV buttons) === -->
   <div id="test">
     <div class="t-back"></div>
     <div class="t-card">
@@ -196,27 +176,11 @@
     </div>
   </div>
 
-  <!-- Tiny floating control panel -->
-  <div id="ctrl" class="ctrl">
-    <button class="fab" id="ctrlFab">⚙︎</button>
-    <div class="panel">
-      <div class="toggle"><input type="checkbox" id="bypassToggle" /> <label for="bypassToggle">24時間ロックを無視</label></div>
-      <div class="row">
-        <button id="ctrlPrev">◀︎</button>
-        <button id="ctrlNext">▶︎</button>
-      </div>
-      <div class="row">
-        <button id="ctrlUnlock">いま解放</button>
-        <button id="ctrlTest">テスト</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MAIN APP -->
   <script>
     /* ---------- Safety net ---------- */
     (function trap(){
-      const og = console.error.bind(console);
+      const og = console.error?.bind?.(console) || console.error;
       window.addEventListener('error', e => { try{ og('JS error:', e.message); }catch{} }, {capture:true});
       window.addEventListener('unhandledrejection', e => { try{ og('Promise rejection:', e.reason); }catch{} });
     })();
@@ -262,7 +226,6 @@
             g.gain.value = gain;
             node.connect(g).connect(ctx.destination);
           }catch(err){
-            // Safari throws if the same MediaElement is connected twice; fallback to volume
             el.volume = Math.min(1, gain);
           }
         }else{
@@ -277,8 +240,8 @@
     window.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopActive(); });
 
     /* ---------- Constants & DOM ---------- */
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-    const MAX_IDX = 14; // A..O
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""); // 26 letters
+    const MAX_IDX = 25; // A..Z
     const TOTAL_LETTERS = MAX_IDX + 1;
 
     // LocalStorage keys
@@ -300,23 +263,12 @@
     const lockStatus = document.getElementById("lockStatus");
     const lockFill = document.getElementById("lockFill");
 
-    const prev = document.getElementById("prev");
-    const next = document.getElementById("next");
-
     const test = document.getElementById("test");
     const tGrid = document.getElementById("tGrid");
     const tPlay = document.getElementById("tPlay");
     const tHint = document.getElementById("tHint");
     const tClose = document.getElementById("tClose");
     const tProgress = document.getElementById("tProgress");
-
-    const ctrl = document.getElementById("ctrl");
-    const ctrlFab = document.getElementById("ctrlFab");
-    const ctrlPrev = document.getElementById("ctrlPrev");
-    const ctrlNext = document.getElementById("ctrlNext");
-    const ctrlUnlock = document.getElementById("ctrlUnlock");
-    const ctrlTest = document.getElementById("ctrlTest");
-    const bypassToggle = document.getElementById("bypassToggle");
 
     /* ---------- App state ---------- */
     let letterIdx = 0; // 0=A
@@ -325,7 +277,6 @@
     let lastMilestoneDone = loadNumber(LS_KEY_LAST_TEST, 0);
     let unlockIdx = loadNumber(LS_KEY_UNLOCK_IDX, 0);
     let nextUnlockMs = loadNumber(LS_KEY_NEXT_UNLOCK, 0);
-    let BYPASS_LOCK = false;
 
     /* ---------- Helpers ---------- */
     function loadDoneList(){
@@ -397,7 +348,7 @@
     window.addEventListener('focus', refreshUnlocks);
 
     function clampToUnlocked(i){
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
+      const limit = unlockIdx;
       return Math.max(0, Math.min(i, limit));
     }
 
@@ -417,7 +368,7 @@
     }
 
     function firstUnfinishedUnlocked(){
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
+      const limit = unlockIdx;
       for (let i=0;i<=limit;i++){
         if (!doneSet.has(letters[i])) return i;
       }
@@ -445,6 +396,7 @@
 
     /* ---------- Finish & quizzes ---------- */
     function maybeOpenTestAfterFinish(){
+      // milestones every 5 letters (A–E, F–J, K–O, P–T, U–Y)
       const groupsDone = Math.floor(doneSet.size / 5);
       if (doneSet.size > 0 && doneSet.size % 5 === 0 && groupsDone > lastMilestoneDone){
         lastMilestoneDone = groupsDone;
@@ -487,51 +439,36 @@
         saveDone();
       }
 
+      // Magic + confetti
       playSound('assets/sfx/magic.mp3', 1.5);
       startFinishConfetti(5000);
 
       finishBtn.style.display='none';
       setButtonColorsReset();
 
+      // If the user finished the newest unlocked letter (and it's not Z), start 24h timer for the next one
       if (letterIdx === unlockIdx && unlockIdx < MAX_IDX){
         nextUnlockMs = now() + 24*60*60*1000;
         saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
       }
 
+      // Special: Z (final) -> show finished.jpg and skip milestone quiz
+      if (letterIdx === MAX_IDX){
+        letterImg.src = './finished.jpg';
+        letterImg.alt = 'FINISHED!';
+        updateTop(); // will show "全ての文字がアンロック済み" once unlockIdx>=MAX_IDX
+        return;
+      }
+
+      // Open milestone quiz automatically (every 5 letters)
       maybeOpenTestAfterFinish();
+
+      // Reset to first card for current letter
       showCard(1);
       updateTop();
     };
 
-    /* ---------- Dev nav ---------- */
-    prev.onclick = ()=>{
-      letterIdx = Math.max(0, letterIdx-1);
-      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
-    };
-    next.onclick = ()=>{
-      const limit = BYPASS_LOCK ? MAX_IDX : unlockIdx;
-      const nextIdx = Math.min(limit, letterIdx + 1);
-      letterIdx = nextIdx;
-      setButtonColorsReset(); finishBtn.style.display='none'; showCard(1); updateTop();
-    };
-
-    /* ---------- Control panel ---------- */
-    ctrlFab.onclick = ()=>{ ctrl.classList.toggle('open'); };
-    bypassToggle.onchange = (e)=>{ BYPASS_LOCK = e.target.checked; updateTop(); };
-    ctrlPrev.onclick = ()=> prev.click();
-    ctrlNext.onclick = ()=> next.click();
-    ctrlUnlock.onclick = ()=>{
-      if (unlockIdx < MAX_IDX){
-        unlockIdx += 1;
-        nextUnlockMs = 0;
-        saveNumber(LS_KEY_UNLOCK_IDX, unlockIdx);
-        saveNumber(LS_KEY_NEXT_UNLOCK, nextUnlockMs);
-        updateTop();
-      }
-    };
-    ctrlTest.onclick = ()=> openTest();
-
-    /* ---------- Quiz confetti: 3s ---------- */
+    /* ---------- Quiz confetti: 3s, multi-burst ---------- */
     function startQuizConfetti(duration = 3000){
       const cQuiz = document.getElementById("confettiQuiz");
       const xQuiz = cQuiz.getContext("2d");
@@ -591,12 +528,12 @@
       ctx.lineTo(x,y-outer); ctx.closePath();
     }
 
-    /* ---------- TEST PAGE ---------- */
+    /* ---------- TEST PAGE (auto milestones only) ---------- */
     function shuffle(a){ return a.sort(()=>Math.random()-0.5); }
 
     function openTest(){
       const recent = doneList.slice(-5).map(L => letters.indexOf(L)).filter(i => i>=0 && i<=MAX_IDX);
-      let pool = recent.length >= 4 ? recent : Array.from({length:(BYPASS_LOCK?MAX_IDX+1:unlockIdx+1)}, (_,i)=>i);
+      let pool = recent.length >= 4 ? recent : Array.from({length:(unlockIdx+1)}, (_,i)=>i);
       pool = shuffle(pool).slice(0,4);
 
       const correctIdx = pool[Math.floor(Math.random()*pool.length)];
